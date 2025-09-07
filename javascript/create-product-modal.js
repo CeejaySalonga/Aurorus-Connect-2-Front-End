@@ -19,7 +19,7 @@ class CreateProductModal {
         this.modal = document.createElement('div');
         this.modal.className = 'modal-container';
 
-        // Modal animations and base styles are now in css/create-product-modal.css
+        // Modal animations and all popup form styles are in css/create-product-modal.css
 
         this.loadModalContent();
         this.overlay.appendChild(this.modal);
@@ -28,7 +28,22 @@ class CreateProductModal {
 
     loadModalContent() {
         // Fetch external popup HTML and inject only the .form-container
-        fetch('../html/create-product-popup.html', { cache: 'no-store' })
+        // Use path relative to products.html for reliability
+        const popupPath = 'create-product-popup.html';
+        // If running from file://, fetch may be restricted; we'll fall back to a local template
+        const isFileProtocol = window.location.protocol === 'file:';
+        if (isFileProtocol) {
+            const tpl = document.getElementById('create-product-popup-template');
+            if (tpl && tpl.content) {
+                const cloned = tpl.content.cloneNode(true);
+                this.modal.innerHTML = '';
+                this.modal.appendChild(cloned.querySelector('.form-container'));
+                this.bindModalEvents();
+                return;
+            }
+        }
+
+        fetch(popupPath, { cache: 'no-store' })
             .then(res => res.text())
             .then(html => {
                 const temp = document.createElement('div');
@@ -37,12 +52,20 @@ class CreateProductModal {
                 if (!formContainer) throw new Error('Form container not found');
                 this.modal.innerHTML = '';
                 this.modal.appendChild(formContainer);
-                // The form styling is provided by css/create-event-popup.css (shared)
+                // Form styling comes from css/create-product-modal.css (scoped)
                 this.bindModalEvents();
             })
             .catch(err => {
                 console.error('Failed to load product popup:', err);
-                this.showFallback();
+                const tpl = document.getElementById('create-product-popup-template');
+                if (tpl && tpl.content) {
+                    const cloned = tpl.content.cloneNode(true);
+                    this.modal.innerHTML = '';
+                    this.modal.appendChild(cloned.querySelector('.form-container'));
+                    this.bindModalEvents();
+                } else {
+                    this.showFallback();
+                }
             });
     }
 

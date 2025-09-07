@@ -6,11 +6,77 @@
     <title>Aurorus Connect - Product Management</title>
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/products.css">
-    <link rel="stylesheet" href="../css/create-event-popup.css">
     <link rel="stylesheet" href="../css/create-product-modal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- Hidden template fallback for file:// usage -->
+    <template id="create-product-popup-template">
+        <div class="form-container">
+            <div class="form-header">
+                <h2><i class="fas fa-plus"></i> Create New Product</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="product-sku">SKU</label>
+                        <input type="text" id="product-sku" placeholder="Enter SKU...">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-name">Name</label>
+                        <input type="text" id="product-name" placeholder="Enter product name...">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-specs">Specifications</label>
+                        <input type="text" id="product-specs" placeholder="Enter specifications...">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price">Price</label>
+                        <input type="number" id="product-price" placeholder="0.00" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-stock">Stock</label>
+                        <input type="number" id="product-stock" placeholder="0" min="0" step="1">
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="product-category">Category</label>
+                        <input type="text" id="product-category" placeholder="Enter category...">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-variant">Variant</label>
+                        <select id="product-variant">
+                            <option value="">Select variant</option>
+                            <option>Singles</option>
+                            <option>Sealed Products</option>
+                            <option>Pre-Order</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Image</label>
+                        <div class="upload-area">
+                            <input type="file" id="product-image" accept="image/*" style="display: none;">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span onclick="document.getElementById('product-image').click()">Upload Image</span>
+                            <p>Click to select an image file</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-description">Description</label>
+                        <textarea id="product-description" placeholder="Enter product description..." rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+                <div class="action-buttons">
+                    <button class="clear-btn"><i class="fas fa-eraser"></i> Clear</button>
+                    <button class="confirm-btn"><i class="fas fa-check"></i> Create Product</button>
+                </div>
+            </div>
+        </div>
+    </template>
     <div class="container">
         <!-- Left Sidebar Container -->
         <div class="sidebar-container">
