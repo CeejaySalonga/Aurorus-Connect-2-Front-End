@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurorus Connect - Product Management</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/products.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar Container -->
+        <div class="sidebar-container">
+            <div class="sidebar">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-dragon"></i>
+                    </div>
+                </div>
+                
+                <nav class="nav-menu">
+                    <a href="index.html" class="nav-item">
+                        <i class="fas fa-user-check"></i>
+                        <span class="nav-label">Check in</span>
+                    </a>
+                    <div class="nav-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span class="nav-label">Store Credits</span>
+                    </div>
+                    <a href="products.html" class="nav-item active">
+                        <i class="fas fa-box"></i>
+                        <span class="nav-label">Products</span>
+                    </a>
+                    <a href="events.html" class="nav-item">
+                        <i class="fas fa-calendar"></i>
+                        <span class="nav-label">Events</span>
+                    </a>
+                    <div class="nav-item">
+                        <i class="fas fa-download"></i>
+                        <span class="nav-label">Export</span>
+                    </div>
+                    <div class="nav-item logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="nav-label">Logout</span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Container -->
+        <div class="main-container">
+            <div class="main-content">
+                <!-- Top Section: Header -->
+                <div class="products-top-section">
+                    <h1 class="page-title">Product Management</h1>
+                </div>
+                
+                <!-- Create Product Button Section -->
+                <div class="create-product-section">
+                    <button class="create-product-btn">
+                        <i class="fas fa-plus"></i>
+                        Create Product
+                    </button>
+                </div>
+                
+                <!-- Category Filter Section -->
+                <div class="category-filter-section">
+                    <div class="category-dropdowns">
+                        <div class="dropdown-container">
+                            <button class="category-dropdown-btn" onclick="toggleDropdown('vanguard')">
+                                <span>Cardfight Vanguard</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-content" id="vanguard-dropdown">
+                                <a href="#" class="dropdown-item">Singles</a>
+                                <a href="#" class="dropdown-item">Sealed Products</a>
+                                <a href="#" class="dropdown-item">Gaming Accessories</a>
+                                <a href="#" class="dropdown-item">Pre-Order</a>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-container">
+                            <button class="category-dropdown-btn" onclick="toggleDropdown('union')">
+                                <span>Union Arena</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-content" id="union-dropdown">
+                                <a href="#" class="dropdown-item">Singles</a>
+                                <a href="#" class="dropdown-item">Sealed Products</a>
+                                <a href="#" class="dropdown-item">Gaming Accessories</a>
+                                <a href="#" class="dropdown-item">Pre-Order</a>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-container">
+                            <button class="category-dropdown-btn" onclick="toggleDropdown('grand')">
+                                <span>Grand Archive</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-content" id="grand-dropdown">
+                                <a href="#" class="dropdown-item">Singles</a>
+                                <a href="#" class="dropdown-item">Sealed Products</a>
+                                <a href="#" class="dropdown-item">Gaming Accessories</a>
+                                <a href="#" class="dropdown-item">Pre-Order</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Middle Section: Products Table -->
+                <div class="products-middle-section">
+                    <div class="products-table-container">
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Name</th>
+                                    <th>Stock</th>
+                                    <th>Category</th>
+                                    <th>Variant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CFV-001</td>
+                                    <td>Blaster Blade</td>
+                                    <td>15</td>
+                                    <td>Cardfight Vanguard</td>
+                                    <td>Singles</td>
+                                </tr>
+                                <tr>
+                                    <td>CFV-002</td>
+                                    <td>Dragonic Overlord</td>
+                                    <td>8</td>
+                                    <td>Cardfight Vanguard</td>
+                                    <td>Singles</td>
+                                </tr>
+                                <tr>
+                                    <td>CFV-BOX-001</td>
+                                    <td>Vanguard Booster Box</td>
+                                    <td>5</td>
+                                    <td>Cardfight Vanguard</td>
+                                    <td>Sealed Products</td>
+                                </tr>
+                                <tr>
+                                    <td>UA-001</td>
+                                    <td>Union Arena Starter Deck</td>
+                                    <td>12</td>
+                                    <td>Union Arena</td>
+                                    <td>Sealed Products</td>
+                                </tr>
+                                <tr>
+                                    <td>GA-001</td>
+                                    <td>Grand Archive Booster Pack</td>
+                                    <td>25</td>
+                                    <td>Grand Archive</td>
+                                    <td>Sealed Products</td>
+                                </tr>
+                                <tr>
+                                    <td>ACC-001</td>
+                                    <td>Card Sleeves</td>
+                                    <td>50</td>
+                                    <td>Gaming Accessories</td>
+                                    <td>Gaming Accessories</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Dashboard Container -->
+        <div class="dashboard-container">
+            <div class="dashboard">
+                <h2 class="dashboard-title">Aurorus Connect</h2>
+                <p class="date">Monday, August 11</p>
+                
+                <div class="stats-section">
+                    <div class="stat-item">
+                        <div class="stat-label">TOTAL PRODUCTS</div>
+                        <div class="stat-value">156</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-label">LOW STOCK</div>
+                        <div class="stat-value">8</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-label">CATEGORIES</div>
+                        <div class="stat-value">3</div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-content');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(dd => {
+                if (dd.id !== dropdownId + '-dropdown') {
+                    dd.classList.remove('show');
+                }
+            });
+            
+            // Toggle current dropdown
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdowns when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.matches('.category-dropdown-btn')) {
+                const dropdowns = document.querySelectorAll('.dropdown-content');
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

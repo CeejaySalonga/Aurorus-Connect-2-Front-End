@@ -1,0 +1,221 @@
+/* Products Page Styles */
+
+.products-top-section {
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+.create-product-section {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.category-filter-section {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.category-dropdowns {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.category-dropdown-btn {
+    background-color: #3482B4;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    justify-content: space-between;
+}
+
+.category-dropdown-btn:hover {
+    background-color: #2c6a8f;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.category-dropdown-btn i {
+    transition: transform 0.3s ease;
+}
+
+.dropdown-container.active .category-dropdown-btn i {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 180px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    z-index: 1000;
+    top: 100%;
+    left: 0;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+.dropdown-item {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #3482B4;
+}
+
+.products-middle-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: calc(100vh - 400px);
+    padding-bottom: 20px;
+}
+
+.products-table-container {
+    flex: 1;
+    background-color: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 250px;
+}
+
+.products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.products-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.products-table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: bold;
+    color: #333;
+    border-right: 1px solid #e9ecef;
+    font-size: 14px;
+}
+
+.products-table th:last-child {
+    border-right: none;
+}
+
+.products-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    color: #333;
+    text-align: left;
+    border-right: 1px solid #e9ecef;
+}
+
+.products-table td:last-child {
+    border-right: none;
+}
+
+.products-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.products-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.products-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.create-product-btn {
+    background-color: #28A745;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    width: fit-content;
+}
+
+.create-product-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .category-dropdowns {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .dropdown-container {
+        width: 100%;
+    }
+    
+    .category-dropdown-btn {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .products-table {
+        font-size: 12px;
+    }
+    
+    .products-table th,
+    .products-table td {
+        padding: 10px 8px;
+    }
+}
