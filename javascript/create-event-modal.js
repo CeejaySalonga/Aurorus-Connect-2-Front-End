@@ -41,39 +41,7 @@ class CreateEventModal {
             animation: modalSlideIn 0.3s ease-out;
         `;
 
-        // Add CSS animation
-        if (!document.getElementById('modal-styles')) {
-            const style = document.createElement('style');
-            style.id = 'modal-styles';
-            style.textContent = `
-                @keyframes modalSlideIn {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-50px) scale(0.9);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0) scale(1);
-                    }
-                }
-                
-                @keyframes modalSlideOut {
-                    from {
-                        opacity: 1;
-                        transform: translateY(0) scale(1);
-                    }
-                    to {
-                        opacity: 0;
-                        transform: translateY(-50px) scale(0.9);
-                    }
-                }
-                
-                .modal-container.closing {
-                    animation: modalSlideOut 0.3s ease-in forwards;
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        // CSS is now loaded statically in HTML
 
         // Load modal content
         this.loadModalContent();
@@ -121,10 +89,6 @@ class CreateEventModal {
                             <input type="time" id="tournament-time">
                         </div>
                         <div class="form-group">
-                            <label for="event-description">Description</label>
-                            <textarea id="event-description" placeholder="Enter event description..." rows="4"></textarea>
-                        </div>
-                        <div class="form-group">
                             <label>Event Image</label>
                             <div class="upload-area">
                                 <input type="file" id="event-image" accept="image/*" style="display: none;">
@@ -133,6 +97,14 @@ class CreateEventModal {
                                 <p>Click to select an image file</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Description Section - Full Width -->
+                <div class="description-section">
+                    <div class="form-group">
+                        <label for="event-description">Description</label>
+                        <textarea id="event-description" placeholder="Enter event description..." rows="6"></textarea>
                     </div>
                 </div>
             
@@ -156,257 +128,7 @@ class CreateEventModal {
             </div>
         `;
         
-        // Load the CSS for the modal
-        this.loadModalCSS();
         this.bindModalEvents();
-    }
-
-    loadModalCSS() {
-        // Check if CSS is already loaded
-        if (document.getElementById('create-event-modal-css')) {
-            return;
-        }
-
-        // Create and inject the CSS
-        const style = document.createElement('style');
-        style.id = 'create-event-modal-css';
-        style.textContent = `
-            /* Reset and base styles */
-            .modal-container * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
-            .modal-container .form-container {
-                width: 700px;
-                max-width: 100%;
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                overflow: hidden;
-            }
-
-            .modal-container .form-header {
-                background-color: #3482B4;
-                color: white;
-                padding: 20px 30px;
-                border-bottom: 3px solid #50B4E6;
-            }
-
-            .modal-container .form-header h2 {
-                margin: 0;
-                font-size: 24px;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
-
-            .modal-container .form-header i {
-                font-size: 20px;
-            }
-
-            .modal-container .form-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 30px;
-                padding: 30px;
-            }
-
-            .modal-container .form-column {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .modal-container .form-group {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .modal-container .form-group label {
-                font-weight: 600;
-                color: #333;
-                margin-bottom: 8px;
-                font-size: 14px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
-
-            .modal-container .form-group input,
-            .modal-container .form-group select,
-            .modal-container .form-group textarea {
-                width: 100%;
-                padding: 12px 15px;
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 14px;
-                transition: all 0.3s ease;
-                background-color: #f8f9fa;
-            }
-
-            .modal-container .form-group input:focus,
-            .modal-container .form-group select:focus,
-            .modal-container .form-group textarea:focus {
-                outline: none;
-                border-color: #50B4E6;
-                background-color: white;
-                box-shadow: 0 0 0 3px rgba(80, 180, 230, 0.1);
-            }
-
-            .modal-container .form-group textarea {
-                resize: vertical;
-                min-height: 100px;
-                line-height: 1.5;
-            }
-
-            .modal-container .form-group .upload-area {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 160px;
-                border: 2px dashed #50B4E6;
-                border-radius: 8px;
-                background-color: #f8f9fa;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                text-align: center;
-                padding: 20px;
-            }
-
-            .modal-container .form-group .upload-area:hover {
-                background-color: #e3f2fd;
-                border-color: #3482B4;
-            }
-
-            .modal-container .form-group .upload-area i {
-                font-size: 32px;
-                color: #50B4E6;
-                margin-bottom: 10px;
-            }
-
-            .modal-container .form-group .upload-area span {
-                color: #3482B4;
-                font-weight: 600;
-                font-size: 16px;
-                margin-bottom: 5px;
-            }
-
-            .modal-container .form-group .upload-area p {
-                color: #666;
-                font-size: 12px;
-                margin: 0;
-            }
-
-            .modal-container .button-group {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 25px 30px;
-                background-color: #f8f9fa;
-                border-top: 2px solid #e9ecef;
-            }
-
-            .modal-container .action-buttons {
-                display: flex;
-                gap: 15px;
-            }
-
-            .modal-container .back-btn,
-            .modal-container .clear-btn,
-            .modal-container .confirm-btn {
-                padding: 12px 25px;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
-
-            .modal-container .back-btn {
-                background-color: #6c757d;
-                color: white;
-            }
-
-            .modal-container .back-btn:hover {
-                background-color: #5a6268;
-                transform: translateY(-1px);
-                box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-            }
-
-            .modal-container .clear-btn {
-                background-color: white;
-                color: #dc3545;
-                border: 2px solid #dc3545;
-            }
-
-            .modal-container .clear-btn:hover {
-                background-color: #dc3545;
-                color: white;
-                transform: translateY(-1px);
-                box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-            }
-
-            .modal-container .confirm-btn {
-                background-color: #3482B4;
-                color: white;
-            }
-
-            .modal-container .confirm-btn:hover {
-                background-color: #2c6a8f;
-                transform: translateY(-1px);
-                box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-            }
-
-            /* Responsive design */
-            @media (max-width: 768px) {
-                .modal-container .form-container {
-                    width: 100%;
-                }
-                
-                .modal-container .form-grid {
-                    grid-template-columns: 1fr;
-                    gap: 20px;
-                    padding: 20px;
-                }
-                
-                .modal-container .form-header {
-                    padding: 15px 20px;
-                }
-                
-                .modal-container .form-header h2 {
-                    font-size: 20px;
-                }
-                
-                .modal-container .button-group {
-                    flex-direction: column;
-                    gap: 15px;
-                    padding: 20px;
-                }
-                
-                .modal-container .action-buttons {
-                    width: 100%;
-                    justify-content: center;
-                }
-                
-                .modal-container .back-btn {
-                    width: 100%;
-                    justify-content: center;
-                }
-            }
-        `;
-        
-        document.head.appendChild(style);
     }
 
     showErrorModal() {
