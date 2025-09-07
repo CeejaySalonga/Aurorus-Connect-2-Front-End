@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../css/create-event-popup.css">
+  <link rel="stylesheet" href="../css/create-popup.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="icon" type="image/x-icon" href="../Assets/Icons/moth-vape-logo.png">
   <title>Create New Event</title>
 </head>
 <body>
+    <div class="modal-content">
     <div class="form-container">
       <!-- Header Section -->
       <div class="form-header">
@@ -43,10 +43,7 @@
             <label for="tournament-time">Tournament Time</label>
             <input type="time" id="tournament-time">
           </div>
-          <div class="form-group">
-            <label for="event-description">Description</label>
-            <textarea id="event-description" placeholder="Enter event description..." rows="4"></textarea>
-          </div>
+          
           <div class="form-group">
             <label>Event Image</label>
             <div class="upload-area">
@@ -56,6 +53,14 @@
               <p>Click to select an image file</p>
             </div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Full-width Description Section -->
+      <div class="form-section">
+        <div class="form-group">
+          <label for="event-description">Description</label>
+          <textarea id="event-description" placeholder="Enter event description..." rows="6"></textarea>
         </div>
       </div>
   
@@ -76,6 +81,7 @@
           </button>
         </div>
       </div>
+    </div>
     </div>
   </body>
   </html>

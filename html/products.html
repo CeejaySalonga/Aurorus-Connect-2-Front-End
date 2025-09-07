@@ -6,11 +6,11 @@
     <title>Aurorus Connect - Product Management</title>
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/products.css">
-    <link rel="stylesheet" href="../css/create-product-modal.css">
+    <link rel="stylesheet" href="../css/create-popup.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- Hidden template fallback for file:// usage -->
+    <!-- Hidden template fallback for localhost usage -->
     <template id="create-product-popup-template">
         <div class="form-container">
             <div class="form-header">
@@ -62,10 +62,12 @@
                             <p>Click to select an image file</p>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="product-description">Description</label>
-                        <textarea id="product-description" placeholder="Enter product description..." rows="4"></textarea>
-                    </div>
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="product-description">Description</label>
+                    <textarea id="product-description" placeholder="Enter product description..." rows="6"></textarea>
                 </div>
             </div>
             <div class="button-group">
@@ -77,6 +79,7 @@
             </div>
         </div>
     </template>
+    
     <div class="container">
         <!-- Left Sidebar Container -->
         <div class="sidebar-container">
@@ -379,7 +382,7 @@
     </div>
     
     <!-- JavaScript -->
-    <script src="../javascript/create-product-modal.js"></script>
+    <script src="../javascript/create-popup.js"></script>
     <script>
         function toggleDropdown(dropdownId) {
             const dropdown = document.getElementById(dropdownId + '-dropdown');

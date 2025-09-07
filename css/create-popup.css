@@ -1,23 +1,9 @@
-/* Reset and base styles */
-* {
-    margin: 0;
-    padding: 0;
+/* Reset and base styles (scoped to modal only) */
+.modal-content, .modal-content * {
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
-    line-height: 1.6;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-.form-container {
+.modal-content .form-container {
     width: 700px;
     max-width: 100%;
     background: white;
@@ -26,14 +12,14 @@ body {
     overflow: hidden;
 }
 
-.form-header {
+.modal-content .form-header {
     background-color: #3482B4;
     color: white;
     padding: 20px 30px;
     border-bottom: 3px solid #50B4E6;
 }
 
-.form-header h2 {
+.modal-content .form-header h2 {
     margin: 0;
     font-size: 24px;
     font-weight: bold;
@@ -42,29 +28,29 @@ body {
     gap: 12px;
 }
 
-.form-header i {
+.modal-content .form-header i {
     font-size: 20px;
 }
 
-.form-grid {
+.modal-content .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     padding: 30px;
 }
 
-.form-column {
+.modal-content .form-column {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.form-group {
+.modal-content .form-group {
     display: flex;
     flex-direction: column;
 }
 
-.form-group label {
+.modal-content .form-group label {
     font-weight: 600;
     color: #333;
     margin-bottom: 8px;
@@ -73,9 +59,9 @@ body {
     letter-spacing: 0.5px;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.modal-content .form-group input,
+.modal-content .form-group select,
+.modal-content .form-group textarea {
     width: 100%;
     padding: 12px 15px;
     border: 2px solid #e9ecef;
@@ -86,22 +72,22 @@ body {
     background-color: #f8f9fa;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.modal-content .form-group input:focus,
+.modal-content .form-group select:focus,
+.modal-content .form-group textarea:focus {
     outline: none;
     border-color: #50B4E6;
     background-color: white;
     box-shadow: 0 0 0 3px rgba(80, 180, 230, 0.1);
 }
 
-.form-group textarea {
-    resize: vertical;
+.modal-content .form-group textarea {
+    resize: none;
     min-height: 100px;
     line-height: 1.5;
 }
 
-.form-group .upload-area {
+.modal-content .form-group .upload-area {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -116,31 +102,35 @@ body {
     padding: 20px;
 }
 
-.form-group .upload-area:hover {
+.modal-content .form-group .upload-area:hover {
     background-color: #e3f2fd;
     border-color: #3482B4;
 }
 
-.form-group .upload-area i {
+.modal-content .form-group .upload-area i {
     font-size: 32px;
     color: #50B4E6;
     margin-bottom: 10px;
 }
 
-.form-group .upload-area span {
+.modal-content .form-group .upload-area span {
     color: #3482B4;
     font-weight: 600;
     font-size: 16px;
     margin-bottom: 5px;
 }
 
-.form-group .upload-area p {
+.modal-content .form-group .upload-area p {
     color: #666;
     font-size: 12px;
     margin: 0;
 }
 
-.button-group {
+.modal-content .form-section {
+    padding: 0 30px 30px 30px;
+}
+
+.modal-content .button-group {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -149,14 +139,14 @@ body {
     border-top: 2px solid #e9ecef;
 }
 
-.action-buttons {
+.modal-content .action-buttons {
     display: flex;
     gap: 15px;
 }
 
-.back-btn,
-.clear-btn,
-.confirm-btn {
+.modal-content .back-btn,
+.modal-content .clear-btn,
+.modal-content .confirm-btn {
     padding: 12px 25px;
     border: none;
     border-radius: 8px;
@@ -170,36 +160,36 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.back-btn {
+.modal-content .back-btn {
     background-color: #6c757d;
     color: white;
 }
 
-.back-btn:hover {
+.modal-content .back-btn:hover {
     background-color: #5a6268;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
-.clear-btn {
+.modal-content .clear-btn {
     background-color: white;
     color: #dc3545;
     border: 2px solid #dc3545;
 }
 
-.clear-btn:hover {
+.modal-content .clear-btn:hover {
     background-color: #dc3545;
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
-.confirm-btn {
+.modal-content .confirm-btn {
     background-color: #3482B4;
     color: white;
 }
 
-.confirm-btn:hover {
+.modal-content .confirm-btn:hover {
     background-color: #2c6a8f;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
@@ -207,41 +197,61 @@ body {
 
 /* Responsive design */
 @media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-    
-    .form-container {
+    .modal-content .form-container {
         width: 100%;
     }
-    
-    .form-grid {
+    .modal-content .form-grid {
         grid-template-columns: 1fr;
         gap: 20px;
         padding: 20px;
     }
-    
-    .form-header {
+    .modal-content .form-header {
         padding: 15px 20px;
     }
-    
-    .form-header h2 {
+    .modal-content .form-header h2 {
         font-size: 20px;
     }
-    
-    .button-group {
+    .modal-content .button-group {
         flex-direction: column;
         gap: 15px;
         padding: 20px;
     }
-    
-    .action-buttons {
+    .modal-content .action-buttons {
         width: 100%;
         justify-content: center;
     }
-    
-    .back-btn {
+    .modal-content .back-btn {
         width: 100%;
         justify-content: center;
     }
+}
+
+/* Modal overlay and container */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.modal-content {
+    max-height: none;
+    overflow: visible;
+    border-radius: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Ensure the injected form keeps its visuals inside modal */
+.modal-content .form-container {
+    margin: 0;
 }

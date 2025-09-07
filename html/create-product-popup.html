@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../css/create-event-popup.css">
+  <link rel="stylesheet" href="../css/create-popup.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <title>Create New Product</title>
   <!-- Reuses create-event-popup.css for consistent styling -->
   <!-- Only the inner .form-container will be injected by JS into the modal overlay -->
-  <style>body{display:none}</style>
 </head>
 <body>
+  <div class="modal-content">
   <div class="form-container">
     <div class="form-header">
       <h2><i class="fas fa-plus"></i> Create New Product</h2>
@@ -63,10 +63,14 @@
             <p>Click to select an image file</p>
           </div>
         </div>
-        <div class="form-group">
-          <label for="product-description">Description</label>
-          <textarea id="product-description" placeholder="Enter product description..." rows="4"></textarea>
-        </div>
+      </div>
+    </div>
+    
+    <!-- Full-width Description Section -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="product-description">Description</label>
+        <textarea id="product-description" placeholder="Enter product description..." rows="6"></textarea>
       </div>
     </div>
 
@@ -86,6 +90,7 @@
         </button>
       </div>
     </div>
+  </div>
   </div>
 </body>
 </html>
