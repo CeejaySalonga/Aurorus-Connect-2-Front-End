@@ -159,36 +159,50 @@
 
 .event-card-content {
     flex: 0 0 25%;
-    padding: 12px 15px;
+    padding: 10px 12px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
     background-color: white;
     min-height: 70px;
+    max-height: 70px;
     border-top: 1px solid #f0f0f0;
+    gap: 6px;
+    overflow: hidden;
 }
 
 .event-card-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: #333;
     margin: 0;
-    flex: 1;
-    margin-right: 12px;
-    line-height: 1.3;
+    line-height: 1.2;
+    max-height: 32px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-wrap: break-word;
+    hyphens: auto;
 }
 
 .edit-event-btn {
     background-color: white;
     color: #3482B4;
     border: 2px solid #3482B4;
-    padding: 8px 18px;
+    padding: 6px;
     border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
     flex-shrink: 0;
+    width: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
 }
 
 .edit-event-btn:hover {
