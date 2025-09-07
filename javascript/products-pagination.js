@@ -1,4 +1,4 @@
-// Client-side pagination for the check-in table
+// Client-side pagination for the products table
 (function () {
 	function select(selector, root) {
 		return (root || document).querySelector(selector);
@@ -22,7 +22,7 @@
 	}
 
 	function initPagination() {
-		var tableBody = select(".user-table .table-body");
+		var tableBody = select(".products-table .table-body");
 		if (!tableBody) return;
 		var allRows = selectAll(".table-row", tableBody);
 		if (!allRows.length) return;
@@ -51,8 +51,8 @@
 		}
 
 	function adjustHeaderForScrollbar() {
-		var tableBody = select(".user-table .table-body");
-		var tableHeader = select(".user-table .table-header");
+		var tableBody = select(".products-table .table-body");
+		var tableHeader = select(".products-table .table-header");
 		if (!tableBody || !tableHeader) return;
 		
 		// Calculate scrollbar width
@@ -113,5 +113,3 @@
 		initPagination();
 	}
 })();
-
-
