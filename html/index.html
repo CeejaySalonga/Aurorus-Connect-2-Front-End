@@ -97,6 +97,84 @@
                                 <div class="table-cell">03:10 PM</div>
                                 <div class="table-cell status-active">Active</div>
                             </div>
+                            <div class="table-row">
+                                <div class="table-cell">001</div>
+                                <div class="table-cell">JohnDoe</div>
+                                <div class="table-cell">09:15 AM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">002</div>
+                                <div class="table-cell">SarahSmith</div>
+                                <div class="table-cell">10:30 AM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">003</div>
+                                <div class="table-cell">MikeJohnson</div>
+                                <div class="table-cell">11:45 AM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">004</div>
+                                <div class="table-cell">EmilyDavis</div>
+                                <div class="table-cell">02:20 PM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">005</div>
+                                <div class="table-cell">AlexWilson</div>
+                                <div class="table-cell">03:10 PM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">001</div>
+                                <div class="table-cell">JohnDoe</div>
+                                <div class="table-cell">09:15 AM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">002</div>
+                                <div class="table-cell">SarahSmith</div>
+                                <div class="table-cell">10:30 AM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">003</div>
+                                <div class="table-cell">MikeJohnson</div>
+                                <div class="table-cell">11:45 AM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">004</div>
+                                <div class="table-cell">EmilyDavis</div>
+                                <div class="table-cell">02:20 PM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                            <div class="table-row">
+                                <div class="table-cell">005</div>
+                                <div class="table-cell">AlexWilson</div>
+                                <div class="table-cell">03:10 PM</div>
+                                <div class="table-cell status-active">Active</div>
+                            </div>
+                        </div>
+                        <div class="table-pagination" aria-label="User table pagination controls">
+                            <div class="pagination-left">
+                                <label for="pageSizeSelect">Rows per page:</label>
+                                <select id="pageSizeSelect">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                            <div class="pagination-right">
+                                <button id="firstPageBtn" type="button">« First</button>
+                                <button id="prevPageBtn" type="button">‹ Prev</button>
+                                <span id="pageInfo" aria-live="polite"></span>
+                                <button id="nextPageBtn" type="button">Next ›</button>
+                                <button id="lastPageBtn" type="button">Last »</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -180,5 +258,6 @@
             </div>
         </div>
     </div>
+    <script src="../javascript/checkin-pagination.js"></script>
 </body>
 </html>
