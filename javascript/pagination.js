@@ -1,4 +1,4 @@
-// Client-side pagination for the check-in table
+// Universal pagination for tables
 (function () {
 	function select(selector, root) {
 		return (root || document).querySelector(selector);
@@ -21,8 +21,18 @@
 		el.textContent = "Page " + page + " of " + totalPages + " (" + totalRows + " rows)";
 	}
 
-	function initPagination() {
-		var tableBody = select(".user-table .table-body");
+	function adjustHeaderForScrollbar(tableSelector) {
+		var tableBody = select(tableSelector + " .table-body");
+		var tableHeader = select(tableSelector + " .table-header");
+		if (!tableBody || !tableHeader) return;
+		
+		// Calculate scrollbar width
+		var scrollbarWidth = tableBody.offsetWidth - tableBody.clientWidth;
+		tableHeader.style.paddingRight = scrollbarWidth + "px";
+	}
+
+	function initPagination(tableSelector) {
+		var tableBody = select(tableSelector + " .table-body");
 		if (!tableBody) return;
 		var allRows = selectAll(".table-row", tableBody);
 		if (!allRows.length) return;
@@ -60,6 +70,9 @@
 			if (prevBtn) prevBtn.disabled = state.page === 1;
 			if (nextBtn) nextBtn.disabled = state.page === totalPages;
 			if (lastBtn) lastBtn.disabled = state.page === totalPages;
+			
+			// Adjust header alignment after rendering
+			setTimeout(function() { adjustHeaderForScrollbar(tableSelector); }, 0);
 		}
 
 		// Wire controls
@@ -89,13 +102,26 @@
 		});
 
 		render();
+		
+		// Handle window resize
+		window.addEventListener("resize", function() { adjustHeaderForScrollbar(tableSelector); });
+	}
+
+	// Auto-initialize based on which table is present
+	function autoInit() {
+		// Check for checkin table
+		if (select(".user-table")) {
+			initPagination(".user-table");
+		}
+		// Check for products table
+		if (select(".products-table")) {
+			initPagination(".products-table");
+		}
 	}
 
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initPagination);
+		document.addEventListener("DOMContentLoaded", autoInit);
 	} else {
-		initPagination();
+		autoInit();
 	}
 })();
-
-
