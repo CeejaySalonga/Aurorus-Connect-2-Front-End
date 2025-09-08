@@ -10,7 +10,6 @@
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     overflow: hidden;
-    position: relative;
 }
 
 .form-container .form-header {
@@ -19,10 +18,6 @@
     padding: 25px 30px;
     border-bottom: 3px solid #50B4E6;
     border-radius: 20px 20px 0 0;
-    position: relative;
-    z-index: 1;
-    margin: -2px -2px 0 -2px;
-    width: calc(100% + 4px);
 }
 
 .form-container .form-header h2 {

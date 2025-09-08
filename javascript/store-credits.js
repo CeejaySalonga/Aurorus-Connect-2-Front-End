@@ -321,7 +321,7 @@ class CreditManager {
         document.body.style.overflow = 'hidden';
         
         // Wire up the numpad buttons
-        this.wireNumpadButtons(content.querySelector('.form-container'), overlay);
+        this.wireNumpadButtons(content, overlay);
         
         // Focus on input after a short delay
         setTimeout(() => {
@@ -354,49 +354,49 @@ class CreditManager {
             clearBtn.addEventListener('click', () => {
                 if (amountInput) {
                     amountInput.value = '';
-            }
-        });
-    }
+                }
+            });
+        }
 
-    // Handle confirm button
-    if (confirmBtn) {
+        // Handle confirm button
+        if (confirmBtn) {
             confirmBtn.addEventListener('click', () => {
                 this.handleConfirmAmount(amountInput, overlay);
             });
-    }
+        }
 
-    // Handle numpad button clicks
-    numpadBtns.forEach(btn => {
+        // Handle numpad button clicks
+        numpadBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const value = btn.getAttribute('data-value');
                 const action = btn.getAttribute('data-action');
             
-            if (value) {
+                if (value) {
                     this.addDigit(value, amountInput);
-            } else if (action) {
+                } else if (action) {
                     this.handleNumpadAction(action, amountInput);
-            }
+                }
+            });
         });
-    });
 
-    // Handle keyboard input
-    if (amountInput) {
+        // Handle keyboard input
+        if (amountInput) {
             amountInput.addEventListener('keydown', (e) => {
-            // Allow only numbers and backspace
-            if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
-                e.preventDefault();
-            }
-        });
+                // Allow only numbers and backspace
+                if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                    e.preventDefault();
+                }
+            });
             
             // Handle keyboard input for numbers
             amountInput.addEventListener('keypress', (e) => {
                 if (/[0-9]/.test(e.key)) {
                     e.preventDefault();
                     this.addDigit(e.key, amountInput);
-            }
-        });
+                }
+            });
+        }
     }
-}
 
     addDigit(digit, amountInput) {
         if (amountInput) {

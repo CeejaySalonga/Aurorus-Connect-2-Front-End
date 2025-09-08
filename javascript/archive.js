@@ -66,6 +66,7 @@ class ArchiveManager {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
+            <div class="modal-content">
                 <h3>Export Data</h3>
                 <p>Choose what data you want to export:</p>
                 
@@ -104,6 +105,7 @@ class ArchiveManager {
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
                 </div>
+            </div>
         `;
         document.body.appendChild(modal);
     }

@@ -85,6 +85,7 @@ class ProductManager {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
+            <div class="modal-content">
                 <h3>${isEdit ? 'Edit Product' : 'Add Product'}</h3>
                 <form id="productForm">
                     <div class="form-group">
@@ -131,6 +132,7 @@ class ProductManager {
                         <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
                     </div>
                 </form>
+            </div>
         `;
         document.body.appendChild(modal);
 
