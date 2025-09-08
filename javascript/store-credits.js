@@ -258,9 +258,8 @@ class CreditManager {
         
         // Create numpad content inline (to avoid CORS issues with file:// protocol)
         const content = document.createElement('div');
-        content.className = 'modal-content';
+        content.className = 'form-container';
         content.innerHTML = `
-            <div class="form-container">
                 <!-- Header Section -->
                 <div class="form-header">
                     <h2><i class="fas fa-dollar-sign"></i> Enter Amount</h2>
@@ -315,7 +314,6 @@ class CreditManager {
                         </button>
                     </div>
                 </div>
-            </div>
         `;
         
         overlay.appendChild(content);

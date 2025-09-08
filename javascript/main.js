@@ -115,7 +115,6 @@ class App {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
-            <div class="modal-content">
                 <h3>NFC Not Available</h3>
                 <p>Unable to connect to NFC reader. This could be because:</p>
                 <ul style="text-align: left; margin: 1rem 0;">
@@ -137,7 +136,6 @@ class App {
                         <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
                     </div>
                 </form>
-            </div>
         `;
         document.body.appendChild(modal);
 

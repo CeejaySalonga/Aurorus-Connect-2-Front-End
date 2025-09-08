@@ -9,10 +9,7 @@
                 document.body.style.overflow = '';
             }
         });
-        const content = document.createElement('div');
-        content.className = 'modal-content';
-        overlay.appendChild(content);
-        return { overlay, content };
+        return { overlay };
     }
 
     function wireInnerButtons(container, overlay) {
@@ -51,8 +48,8 @@
                 const formContainer = temp.querySelector('.form-container');
                 if (!formContainer) throw new Error('No form-container in fetched HTML');
 
-                const { overlay, content } = createOverlay();
-                content.appendChild(formContainer);
+                const { overlay } = createOverlay();
+                overlay.appendChild(formContainer);
                 document.body.appendChild(overlay);
                 document.body.style.overflow = 'hidden';
                 wireInnerButtons(formContainer, overlay);
@@ -63,8 +60,8 @@
                 const clone = tpl.content.cloneNode(true);
                 const formContainer = clone.querySelector('.form-container');
                 if (!formContainer) return;
-                const { overlay, content } = createOverlay();
-                content.appendChild(formContainer);
+                const { overlay } = createOverlay();
+                overlay.appendChild(formContainer);
                 document.body.appendChild(overlay);
                 document.body.style.overflow = 'hidden';
                 wireInnerButtons(formContainer, overlay);

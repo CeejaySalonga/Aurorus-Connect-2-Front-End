@@ -1,26 +1,31 @@
 /* Reset and base styles (scoped to modal only) */
-.modal-content, .modal-content * {
+.form-container, .form-container * {
     box-sizing: border-box;
 }
 
-.modal-content .form-container {
+.form-container {
     width: 700px;
     max-width: 100%;
     background: white;
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     overflow: hidden;
+    position: relative;
 }
 
-.modal-content .form-header {
+.form-container .form-header {
     background-color: #3482B4;
     color: white;
     padding: 25px 30px;
     border-bottom: 3px solid #50B4E6;
     border-radius: 20px 20px 0 0;
+    position: relative;
+    z-index: 1;
+    margin: -2px -2px 0 -2px;
+    width: calc(100% + 4px);
 }
 
-.modal-content .form-header h2 {
+.form-container .form-header h2 {
     margin: 0;
     font-size: 24px;
     font-weight: bold;
@@ -29,29 +34,29 @@
     gap: 12px;
 }
 
-.modal-content .form-header i {
+.form-container .form-header i {
     font-size: 20px;
 }
 
-.modal-content .form-grid {
+.form-container .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     padding: 30px;
 }
 
-.modal-content .form-column {
+.form-container .form-column {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.modal-content .form-group {
+.form-container .form-group {
     display: flex;
     flex-direction: column;
 }
 
-.modal-content .form-group label {
+.form-container .form-group label {
     font-weight: 600;
     color: #333;
     margin-bottom: 8px;
@@ -60,9 +65,9 @@
     letter-spacing: 0.5px;
 }
 
-.modal-content .form-group input,
-.modal-content .form-group select,
-.modal-content .form-group textarea {
+.form-container .form-group input,
+.form-container .form-group select,
+.form-container .form-group textarea {
     width: 100%;
     padding: 12px 15px;
     border: 2px solid #e9ecef;
@@ -73,22 +78,22 @@
     background-color: #f8f9fa;
 }
 
-.modal-content .form-group input:focus,
-.modal-content .form-group select:focus,
-.modal-content .form-group textarea:focus {
+.form-container .form-group input:focus,
+.form-container .form-group select:focus,
+.form-container .form-group textarea:focus {
     outline: none;
     border-color: #50B4E6;
     background-color: white;
     box-shadow: 0 0 0 3px rgba(80, 180, 230, 0.1);
 }
 
-.modal-content .form-group textarea {
+.form-container .form-group textarea {
     resize: none;
     min-height: 100px;
     line-height: 1.5;
 }
 
-.modal-content .form-group .upload-area {
+.form-container .form-group .upload-area {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -103,35 +108,35 @@
     padding: 20px;
 }
 
-.modal-content .form-group .upload-area:hover {
+.form-container .form-group .upload-area:hover {
     background-color: #e3f2fd;
     border-color: #3482B4;
 }
 
-.modal-content .form-group .upload-area i {
+.form-container .form-group .upload-area i {
     font-size: 32px;
     color: #50B4E6;
     margin-bottom: 10px;
 }
 
-.modal-content .form-group .upload-area span {
+.form-container .form-group .upload-area span {
     color: #3482B4;
     font-weight: 600;
     font-size: 16px;
     margin-bottom: 5px;
 }
 
-.modal-content .form-group .upload-area p {
+.form-container .form-group .upload-area p {
     color: #666;
     font-size: 12px;
     margin: 0;
 }
 
-.modal-content .form-section {
+.form-container .form-section {
     padding: 20px 30px 20px 30px;
 }
 
-.modal-content .button-group {
+.form-container .button-group {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -141,14 +146,14 @@
     border-radius: 0 0 20px 20px;
 }
 
-.modal-content .action-buttons {
+.form-container .action-buttons {
     display: flex;
     gap: 15px;
 }
 
-.modal-content .back-btn,
-.modal-content .clear-btn,
-.modal-content .confirm-btn {
+.form-container .back-btn,
+.form-container .clear-btn,
+.form-container .confirm-btn {
     padding: 12px 25px;
     border: none;
     border-radius: 15px;
@@ -162,36 +167,36 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.modal-content .back-btn {
+.form-container .back-btn {
     background-color: #6c757d;
     color: white;
 }
 
-.modal-content .back-btn:hover {
+.form-container .back-btn:hover {
     background-color: #5a6268;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
-.modal-content .clear-btn {
+.form-container .clear-btn {
     background-color: white;
     color: #dc3545;
     border: 2px solid #dc3545;
 }
 
-.modal-content .clear-btn:hover {
+.form-container .clear-btn:hover {
     background-color: #dc3545;
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
-.modal-content .confirm-btn {
+.form-container .confirm-btn {
     background-color: #3482B4;
     color: white;
 }
 
-.modal-content .confirm-btn:hover {
+.form-container .confirm-btn:hover {
     background-color: #2c6a8f;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
@@ -199,30 +204,30 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .modal-content .form-container {
+    .form-container {
         width: 100%;
     }
-    .modal-content .form-grid {
+    .form-container .form-grid {
         grid-template-columns: 1fr;
         gap: 20px;
         padding: 20px;
     }
-    .modal-content .form-header {
+    .form-container .form-header {
         padding: 15px 20px;
     }
-    .modal-content .form-header h2 {
+    .form-container .form-header h2 {
         font-size: 20px;
     }
-    .modal-content .button-group {
+    .form-container .button-group {
         flex-direction: column;
         gap: 15px;
         padding: 20px;
     }
-    .modal-content .action-buttons {
+    .form-container .action-buttons {
         width: 100%;
         justify-content: center;
     }
-    .modal-content .back-btn {
+    .form-container .back-btn {
         width: 100%;
         justify-content: center;
     }
@@ -244,7 +249,7 @@
     overflow: hidden;
 }
 
-.modal-content {
+.form-container {
     max-height: none;
     overflow: visible;
     border-radius: 12px;
@@ -254,12 +259,12 @@
 }
 
 /* Ensure the injected form keeps its visuals inside modal */
-.modal-content .form-container {
+.form-container {
     margin: 0;
 }
 
 /* Numpad specific styles */
-.modal-content .numpad-input {
+.form-container .numpad-input {
     font-size: 24px;
     font-weight: bold;
     text-align: center;
@@ -271,26 +276,26 @@
     letter-spacing: 2px;
 }
 
-.modal-content .numpad-input:focus {
+.form-container .numpad-input:focus {
     border-color: #50B4E6;
     background-color: white;
     box-shadow: 0 0 0 3px rgba(80, 180, 230, 0.1);
 }
 
-.modal-content .numpad-grid {
+.form-container .numpad-grid {
     display: flex;
     flex-direction: column;
     gap: 15px;
     padding: 20px 30px 30px 30px;
 }
 
-.modal-content .numpad-row {
+.form-container .numpad-row {
     display: flex;
     justify-content: center;
     gap: 15px;
 }
 
-.modal-content .numpad-btn {
+.form-container .numpad-btn {
     padding: 15px;
     border: 2px solid #e9ecef;
     border-radius: 12px;
@@ -309,7 +314,7 @@
     flex-shrink: 0;
 }
 
-.modal-content .numpad-btn:hover {
+.form-container .numpad-btn:hover {
     background-color: #50B4E6;
     color: white;
     border-color: #3482B4;
@@ -317,51 +322,51 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.modal-content .numpad-btn:active {
+.form-container .numpad-btn:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.modal-content .numpad-clear {
+.form-container .numpad-clear {
     background-color: #dc3545;
     color: white;
     border-color: #dc3545;
 }
 
-.modal-content .numpad-clear:hover {
+.form-container .numpad-clear:hover {
     background-color: #c82333;
     border-color: #bd2130;
 }
 
-.modal-content .numpad-backspace {
+.form-container .numpad-backspace {
     background-color: #6c757d;
     color: white;
     border-color: #6c757d;
 }
 
-.modal-content .numpad-backspace:hover {
+.form-container .numpad-backspace:hover {
     background-color: #5a6268;
     border-color: #545b62;
 }
 
 /* Responsive numpad */
 @media (max-width: 768px) {
-    .modal-content .numpad-grid {
+    .form-container .numpad-grid {
         padding: 20px;
         gap: 10px;
     }
     
-    .modal-content .numpad-row {
+    .form-container .numpad-row {
         gap: 10px;
     }
     
-    .modal-content .numpad-btn {
+    .form-container .numpad-btn {
         padding: 15px;
         font-size: 16px;
         min-height: 50px;
     }
     
-    .modal-content .numpad-input {
+    .form-container .numpad-input {
         font-size: 20px;
         padding: 15px;
     }

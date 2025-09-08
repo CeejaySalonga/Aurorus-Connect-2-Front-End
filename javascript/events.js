@@ -116,7 +116,6 @@ class EventManager {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
-            <div class="modal-content">
                 <h3>${isEdit ? 'Edit Event' : 'Add Event'}</h3>
                 <form id="eventForm">
                     <div class="form-group">
@@ -160,7 +159,6 @@ class EventManager {
                         <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
                     </div>
                 </form>
-            </div>
         `;
         document.body.appendChild(modal);
 
@@ -369,7 +367,6 @@ class EventManager {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
-            <div class="modal-content">
                 <h3>Past Events</h3>
                 <div class="past-events-list">
                     ${pastEvents.map(event => `
@@ -383,7 +380,6 @@ class EventManager {
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
                 </div>
-            </div>
         `;
         document.body.appendChild(modal);
     }

@@ -393,11 +393,9 @@ class NFCManager {
             modal.id = 'nfcModal';
             modal.className = 'modal hidden';
             modal.innerHTML = `
-                <div class="modal-content">
                     <h3>NFC Reader</h3>
                     <p>Please tap your phone on the reader</p>
                     <button id="cancelNFC" class="btn-secondary">Cancel</button>
-                </div>
             `;
             document.body.appendChild(modal);
             
@@ -419,12 +417,10 @@ class NFCManager {
         const modal = document.createElement('div');
         modal.className = 'modal success-modal';
         modal.innerHTML = `
-            <div class="modal-content">
                 <h3>✅ ${type} Success</h3>
                 <p><strong>User:</strong> ${userName}</p>
                 <p><strong>Status:</strong> ${message}</p>
                 <button class="btn-primary" onclick="this.closest('.modal').remove()">OK</button>
-            </div>
         `;
         document.body.appendChild(modal);
         
@@ -440,11 +436,9 @@ class NFCManager {
         const modal = document.createElement('div');
         modal.className = 'modal error-modal';
         modal.innerHTML = `
-            <div class="modal-content">
                 <h3>❌ Error</h3>
                 <p>${message}</p>
                 <button class="btn-primary" onclick="this.closest('.modal').remove()">OK</button>
-            </div>
         `;
         document.body.appendChild(modal);
     }
@@ -453,7 +447,6 @@ class NFCManager {
         const modal = document.createElement('div');
         modal.className = 'modal error-modal';
         modal.innerHTML = `
-            <div class="modal-content">
                 <h3>⚠️ NFC Not Supported</h3>
                 <p>${message}</p>
                 <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
@@ -475,7 +468,6 @@ class NFCManager {
                 </div>
                 <p><strong>Or</strong> continue using the system without NFC features.</p>
                 <button class="btn-primary" onclick="this.closest('.modal').remove()">OK</button>
-            </div>
         `;
         document.body.appendChild(modal);
     }
