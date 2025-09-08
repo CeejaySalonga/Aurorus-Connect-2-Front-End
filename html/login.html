@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurorus Connect - Login</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form">
+            <div class="login-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-dragon"></i>
+                    </div>
+                </div>
+                <h1>Aurorus Connect</h1>
+                <p>Sign in to access the admin dashboard</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="admin@aurorus.org">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+                <button type="submit" class="btn-primary btn-full">Sign In</button>
+                <div id="error-message" class="error-message hidden"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK v9+ Modular -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkFXrNVMoqgsI0BVOBaiZP0fgoLTp6bJ8",
+            authDomain: "db-aurorus.firebaseapp.com",
+            databaseURL: "https://db-aurorus-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "db-aurorus",
+            storageBucket: "db-aurorus.firebasestorage.app",
+            messagingSenderId: "1023143491483",
+            appId: "1:1023143491483:web:1083156a3d16c0a7eed33e",
+            measurementId: "G-VTBEQJ46YZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+
+        // Create compatibility layer for existing code
+        window.firebase = {
+            auth: () => auth,
+            database: () => database,
+            storage: () => storage,
+            initializeApp: () => app
+        };
+
+        // Export individual services
+        window.auth = auth;
+        window.database = database;
+        window.storage = storage;
+        window.analytics = analytics;
+
+        // Export Firebase functions for compatibility
+        window.firebaseAuth = {
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        };
+
+        window.firebaseDatabase = {
+            ref,
+            set,
+            get,
+            push,
+            update,
+            remove,
+            onValue,
+            off
+        };
+
+        window.firebaseStorage = {
+            ref: storageRef,
+            uploadBytes,
+            getDownloadURL
+        };
+
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+    
+    <!-- App Scripts -->
+    <script src="../javascript/auth.js"></script>
+</body>
+</html>
