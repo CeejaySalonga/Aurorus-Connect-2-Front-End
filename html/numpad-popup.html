@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../css/create-popup.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Enter Amount</title>
+</head>
+<body>
+  <div class="modal-content">
+    <div class="form-container">
+      <!-- Header Section -->
+      <div class="form-header">
+        <h2><i class="fas fa-dollar-sign"></i> Enter Amount</h2>
+      </div>
+  
+      <!-- Amount Input Section -->
+      <div class="form-section">
+        <div class="form-group">
+          <input type="text" id="amount-input" class="numpad-input" placeholder="$0.00" readonly>
+        </div>
+      </div>
+      
+      <!-- Numpad Grid -->
+      <div class="numpad-grid">
+        <div class="numpad-row">
+          <button class="numpad-btn" data-value="1">1</button>
+          <button class="numpad-btn" data-value="2">2</button>
+          <button class="numpad-btn" data-value="3">3</button>
+        </div>
+        <div class="numpad-row">
+          <button class="numpad-btn" data-value="4">4</button>
+          <button class="numpad-btn" data-value="5">5</button>
+          <button class="numpad-btn" data-value="6">6</button>
+        </div>
+        <div class="numpad-row">
+          <button class="numpad-btn" data-value="7">7</button>
+          <button class="numpad-btn" data-value="8">8</button>
+          <button class="numpad-btn" data-value="9">9</button>
+        </div>
+        <div class="numpad-row">
+          <button class="numpad-btn numpad-clear" data-action="clear">
+            <i class="fas fa-eraser"></i>
+            Clear
+          </button>
+          <button class="numpad-btn" data-value="0">0</button>
+          <button class="numpad-btn numpad-backspace" data-action="backspace">
+            <i class="fas fa-backspace"></i>
+          </button>
+        </div>
+      </div>
+  
+      <!-- Button Section -->
+      <div class="button-group">
+        <button class="back-btn" id="closeNumpad">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <div class="action-buttons">
+          <button class="confirm-btn" id="confirmAmount">
+            <i class="fas fa-check"></i>
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

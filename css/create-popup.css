@@ -7,16 +7,17 @@
     width: 700px;
     max-width: 100%;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     overflow: hidden;
 }
 
 .modal-content .form-header {
     background-color: #3482B4;
     color: white;
-    padding: 20px 30px;
+    padding: 25px 30px;
     border-bottom: 3px solid #50B4E6;
+    border-radius: 20px 20px 0 0;
 }
 
 .modal-content .form-header h2 {
@@ -127,7 +128,7 @@
 }
 
 .modal-content .form-section {
-    padding: 0 30px 30px 30px;
+    padding: 20px 30px 20px 30px;
 }
 
 .modal-content .button-group {
@@ -137,6 +138,7 @@
     padding: 25px 30px;
     background-color: #f8f9fa;
     border-top: 2px solid #e9ecef;
+    border-radius: 0 0 20px 20px;
 }
 
 .modal-content .action-buttons {
@@ -149,7 +151,7 @@
 .modal-content .confirm-btn {
     padding: 12px 25px;
     border: none;
-    border-radius: 8px;
+    border-radius: 15px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -254,4 +256,113 @@
 /* Ensure the injected form keeps its visuals inside modal */
 .modal-content .form-container {
     margin: 0;
+}
+
+/* Numpad specific styles */
+.modal-content .numpad-input {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 20px;
+    color: #333;
+    letter-spacing: 2px;
+}
+
+.modal-content .numpad-input:focus {
+    border-color: #50B4E6;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(80, 180, 230, 0.1);
+}
+
+.modal-content .numpad-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px 30px 30px 30px;
+}
+
+.modal-content .numpad-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal-content .numpad-btn {
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    background-color: white;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 70px;
+    width: 70px;
+    flex-shrink: 0;
+}
+
+.modal-content .numpad-btn:hover {
+    background-color: #50B4E6;
+    color: white;
+    border-color: #3482B4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.modal-content .numpad-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.modal-content .numpad-clear {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.modal-content .numpad-clear:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.modal-content .numpad-backspace {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.modal-content .numpad-backspace:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Responsive numpad */
+@media (max-width: 768px) {
+    .modal-content .numpad-grid {
+        padding: 20px;
+        gap: 10px;
+    }
+    
+    .modal-content .numpad-row {
+        gap: 10px;
+    }
+    
+    .modal-content .numpad-btn {
+        padding: 15px;
+        font-size: 16px;
+        min-height: 50px;
+    }
+    
+    .modal-content .numpad-input {
+        font-size: 20px;
+        padding: 15px;
+    }
 }

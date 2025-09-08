@@ -23,9 +23,6 @@ function initializeStoreCredits() {
         showTerminalBtn.addEventListener('click', handleShowTerminal);
     }
 
-    // Initialize numpad modal
-    initializeNumpadModal();
-
     // Initialize table interactions
     initializeTableInteractions();
 }
@@ -33,7 +30,7 @@ function initializeStoreCredits() {
 function handleProcessCredits() {
     // Handle process credits button click
     console.log('Process Credits clicked');
-    showNumpadModal();
+    openNumpadPopup();
 }
 
 function handlePayWithCredits() {
@@ -118,31 +115,53 @@ function updateStats() {
     }
 }
 
-// Numpad Modal Functions
-function initializeNumpadModal() {
-    const modal = document.getElementById('numpadModal');
-    const closeBtn = document.getElementById('closeNumpadModal');
-    const confirmBtn = document.getElementById('confirmAmount');
-    const amountInput = document.getElementById('amountInput');
-    const numpadBtns = document.querySelectorAll('.numpad-btn');
+// Numpad Popup Functions
+function createNumpadOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.addEventListener('click', function (event) {
+        if (event.target === overlay) {
+            document.body.removeChild(overlay);
+            document.body.style.overflow = '';
+        }
+    });
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    overlay.appendChild(content);
+    return { overlay, content };
+}
 
-    // Close modal when clicking close button
-    if (closeBtn) {
-        closeBtn.addEventListener('click', hideNumpadModal);
+function wireNumpadButtons(container, overlay) {
+    const backBtn = container.querySelector('.back-btn');
+    const clearBtn = container.querySelector('.clear-btn');
+    const confirmBtn = container.querySelector('.confirm-btn');
+    const numpadBtns = container.querySelectorAll('.numpad-btn');
+    const amountInput = container.querySelector('#amount-input');
+
+    // Close popup when clicking back/cancel button
+    if (backBtn) {
+        backBtn.addEventListener('click', function () {
+            if (overlay.parentNode) {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            }
+        });
     }
 
-    // Close modal when clicking outside
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                hideNumpadModal();
+    // Clear input when clicking clear button
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            if (amountInput) {
+                amountInput.value = '';
             }
         });
     }
 
     // Handle confirm button
     if (confirmBtn) {
-        confirmBtn.addEventListener('click', handleConfirmAmount);
+        confirmBtn.addEventListener('click', function () {
+            handleConfirmAmount(amountInput, overlay);
+        });
     }
 
     // Handle numpad button clicks
@@ -152,9 +171,9 @@ function initializeNumpadModal() {
             const action = this.getAttribute('data-action');
             
             if (value) {
-                addDigit(value);
+                addDigit(value, amountInput);
             } else if (action) {
-                handleNumpadAction(action);
+                handleNumpadAction(action, amountInput);
             }
         });
     });
@@ -170,34 +189,62 @@ function initializeNumpadModal() {
     }
 }
 
-function showNumpadModal() {
-    const modal = document.getElementById('numpadModal');
-    const amountInput = document.getElementById('amountInput');
-    
-    if (modal) {
-        modal.classList.add('show');
-        // Clear input when opening
-        if (amountInput) {
-            amountInput.value = '';
-        }
-        // Focus on input
-        setTimeout(() => {
-            if (amountInput) {
-                amountInput.focus();
+function openNumpadPopup() {
+    fetch('numpad-popup.html', { cache: 'no-cache' })
+        .then(function (response) { return response.text(); })
+        .then(function (html) {
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const formContainer = temp.querySelector('.form-container');
+            if (!formContainer) throw new Error('No form-container in fetched HTML');
+
+            const { overlay, content } = createNumpadOverlay();
+            content.appendChild(formContainer);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+            wireNumpadButtons(formContainer, overlay);
+            
+            // Focus on input after a short delay
+            setTimeout(() => {
+                const amountInput = formContainer.querySelector('#amount-input');
+                if (amountInput) {
+                    amountInput.focus();
+                }
+            }, 100);
+        })
+        .catch(function (error) {
+            console.error('Error loading numpad popup, using fallback template:', error);
+            // Use fallback template when fetch fails (e.g., when not using live server)
+            const template = document.getElementById('numpad-popup-template');
+            if (!template) {
+                alert('Error loading numpad popup - no fallback template found');
+                return;
             }
-        }, 100);
-    }
+            
+            const clone = template.content.cloneNode(true);
+            const formContainer = clone.querySelector('.form-container');
+            if (!formContainer) {
+                alert('Error loading numpad popup - invalid template structure');
+                return;
+            }
+            
+            const { overlay, content } = createNumpadOverlay();
+            content.appendChild(formContainer);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+            wireNumpadButtons(formContainer, overlay);
+            
+            // Focus on input after a short delay
+            setTimeout(() => {
+                const amountInput = formContainer.querySelector('#amount-input');
+                if (amountInput) {
+                    amountInput.focus();
+                }
+            }, 100);
+        });
 }
 
-function hideNumpadModal() {
-    const modal = document.getElementById('numpadModal');
-    if (modal) {
-        modal.classList.remove('show');
-    }
-}
-
-function addDigit(digit) {
-    const amountInput = document.getElementById('amountInput');
+function addDigit(digit, amountInput) {
     if (amountInput) {
         const currentValue = amountInput.value;
         // Limit to 6 digits
@@ -207,9 +254,7 @@ function addDigit(digit) {
     }
 }
 
-function handleNumpadAction(action) {
-    const amountInput = document.getElementById('amountInput');
-    
+function handleNumpadAction(action, amountInput) {
     if (action === 'clear') {
         if (amountInput) {
             amountInput.value = '';
@@ -222,15 +267,19 @@ function handleNumpadAction(action) {
     }
 }
 
-function handleConfirmAmount() {
-    const amountInput = document.getElementById('amountInput');
+function handleConfirmAmount(amountInput, overlay) {
     const amount = amountInput ? amountInput.value : '';
     
     if (amount && !isNaN(amount) && parseInt(amount) > 0) {
         console.log('Confirmed amount:', amount);
         // Here you would typically process the credit amount
         alert(`Processing credits for amount: $${amount}`);
-        hideNumpadModal();
+        
+        // Close the popup
+        if (overlay.parentNode) {
+            document.body.removeChild(overlay);
+            document.body.style.overflow = '';
+        }
         
         // You could add the transaction to the table here
         // addTransaction({
