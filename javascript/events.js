@@ -17,13 +17,7 @@ class EventManager {
     }
 
     setupEventListeners() {
-        // Create event button
-        const createEventBtn = document.querySelector('.create-event-btn');
-        if (createEventBtn) {
-            createEventBtn.addEventListener('click', () => {
-                this.showAddEventForm();
-            });
-        }
+        // Create event button is handled by create-popup.js
 
         // Edit event buttons
         document.addEventListener('click', (e) => {

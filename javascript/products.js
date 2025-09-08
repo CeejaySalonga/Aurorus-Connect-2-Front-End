@@ -18,13 +18,7 @@ class ProductManager {
     }
 
     setupEventListeners() {
-        // Create product button
-        const createProductBtn = document.querySelector('.create-product-btn');
-        if (createProductBtn) {
-            createProductBtn.addEventListener('click', () => {
-                this.showAddProductForm();
-            });
-        }
+        // Create product button is handled by create-popup.js
 
         // Category dropdowns
         document.addEventListener('click', (e) => {

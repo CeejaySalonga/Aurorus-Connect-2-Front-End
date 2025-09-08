@@ -54,23 +54,17 @@ class CreditManager {
             });
     }
 
+        // Numpad popup will be loaded dynamically
+
     // Initialize table interactions
         this.initializeTableInteractions();
     }
 
-<<<<<<< Updated upstream
-function handleProcessCredits() {
-    // Handle process credits button click
-    console.log('Process Credits clicked');
-    openNumpadPopup();
-}
-=======
     setupRealtimeListeners() {
         // Listen for credit changes
         window.firebaseDatabase.onValue(window.firebaseDatabase.ref(window.database, 'TBL_STORE_CREDITS_HISTORY'), (snapshot) => {
             this.loadCreditData();
         });
->>>>>>> Stashed changes
 
         // Listen for user credit changes
         window.firebaseDatabase.onValue(window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS'), (snapshot) => {
@@ -168,7 +162,7 @@ function handleProcessCredits() {
         // Set receive mode and show amount input
         this.isReceiveMode = true;
         this.isPayMode = false;
-        this.showNumpadModal('add');
+        this.openNumpadPopup('add');
     }
 
     showPaymentForm() {
@@ -248,26 +242,221 @@ function handleProcessCredits() {
     });
 }
 
-    showNumpadModal(mode = 'add') {
-        const modal = document.getElementById('numpadModal');
-        const amountInput = document.getElementById('amountInput');
-        
-        if (modal) {
-            modal.classList.add('show');
-            // Clear input when opening
-            if (amountInput) {
-                amountInput.value = '';
-            }
-            // Focus on input
-            setTimeout(() => {
-                if (amountInput) {
-                    amountInput.focus();
-                }
-            }, 100);
-        }
-        
+    openNumpadPopup(mode = 'add') {
         // Store the mode for later use
         this.currentNumpadMode = mode;
+        
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.addEventListener('click', function (event) {
+            if (event.target === overlay) {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Create numpad content inline (to avoid CORS issues with file:// protocol)
+        const content = document.createElement('div');
+        content.className = 'modal-content';
+        content.innerHTML = `
+            <div class="form-container">
+                <!-- Header Section -->
+                <div class="form-header">
+                    <h2><i class="fas fa-dollar-sign"></i> Enter Amount</h2>
+                </div>
+          
+                <!-- Amount Input Section -->
+                <div class="form-section">
+                    <div class="form-group">
+                        <input type="text" id="amount-input" class="numpad-input" value="$0.00" readonly>
+                    </div>
+                </div>
+                
+                <!-- Numpad Grid -->
+                <div class="numpad-grid">
+                    <div class="numpad-row">
+                        <button class="numpad-btn" data-value="1">1</button>
+                        <button class="numpad-btn" data-value="2">2</button>
+                        <button class="numpad-btn" data-value="3">3</button>
+                    </div>
+                    <div class="numpad-row">
+                        <button class="numpad-btn" data-value="4">4</button>
+                        <button class="numpad-btn" data-value="5">5</button>
+                        <button class="numpad-btn" data-value="6">6</button>
+                    </div>
+                    <div class="numpad-row">
+                        <button class="numpad-btn" data-value="7">7</button>
+                        <button class="numpad-btn" data-value="8">8</button>
+                        <button class="numpad-btn" data-value="9">9</button>
+                    </div>
+                    <div class="numpad-row">
+                        <button class="numpad-btn numpad-clear" data-action="clear">
+                            <i class="fas fa-eraser"></i>
+                            Clear
+                        </button>
+                        <button class="numpad-btn" data-value="0">0</button>
+                        <button class="numpad-btn numpad-backspace" data-action="backspace">
+                            <i class="fas fa-backspace"></i>
+                        </button>
+                    </div>
+                </div>
+          
+                <!-- Button Section -->
+                <div class="button-group">
+                    <button class="back-btn" id="closeNumpad">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <div class="action-buttons">
+                        <button class="confirm-btn" id="confirmAmount">
+                            <i class="fas fa-check"></i>
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        
+        // Wire up the numpad buttons
+        this.wireNumpadButtons(content.querySelector('.form-container'), overlay);
+        
+        // Focus on input after a short delay
+        setTimeout(() => {
+            const amountInput = content.querySelector('#amount-input');
+            if (amountInput) {
+                amountInput.focus();
+            }
+        }, 100);
+    }
+
+    wireNumpadButtons(container, overlay) {
+        const backBtn = container.querySelector('.back-btn');
+        const clearBtn = container.querySelector('.numpad-clear');
+        const confirmBtn = container.querySelector('.confirm-btn');
+        const numpadBtns = container.querySelectorAll('.numpad-btn');
+        const amountInput = container.querySelector('#amount-input');
+
+        // Close popup when clicking back/cancel button
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                if (overlay.parentNode) {
+                    document.body.removeChild(overlay);
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        // Clear input when clicking clear button
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (amountInput) {
+                    amountInput.value = '';
+            }
+        });
+    }
+
+    // Handle confirm button
+    if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                this.handleConfirmAmount(amountInput, overlay);
+            });
+    }
+
+    // Handle numpad button clicks
+    numpadBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const value = btn.getAttribute('data-value');
+                const action = btn.getAttribute('data-action');
+            
+            if (value) {
+                    this.addDigit(value, amountInput);
+            } else if (action) {
+                    this.handleNumpadAction(action, amountInput);
+            }
+        });
+    });
+
+    // Handle keyboard input
+    if (amountInput) {
+            amountInput.addEventListener('keydown', (e) => {
+            // Allow only numbers and backspace
+            if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                e.preventDefault();
+            }
+        });
+            
+            // Handle keyboard input for numbers
+            amountInput.addEventListener('keypress', (e) => {
+                if (/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                    this.addDigit(e.key, amountInput);
+            }
+        });
+    }
+}
+
+    addDigit(digit, amountInput) {
+        if (amountInput) {
+            let currentValue = amountInput.value.replace('$', '').replace('.00', '');
+            
+            // If current value is 0, replace it with the new digit
+            if (currentValue === '0') {
+                currentValue = '';
+            }
+            
+            // Limit to 6 digits
+            if (currentValue.length < 6) {
+                const newValue = currentValue + digit;
+                amountInput.value = '$' + newValue + '.00';
+            }
+        }
+    }
+
+    handleNumpadAction(action, amountInput) {
+        if (action === 'clear') {
+            if (amountInput) {
+                amountInput.value = '$0.00';
+            }
+        } else if (action === 'backspace') {
+            if (amountInput) {
+                const currentValue = amountInput.value.replace('$', '').replace('.00', '');
+                if (currentValue.length > 1) {
+                    const newValue = currentValue.slice(0, -1);
+                    amountInput.value = '$' + newValue + '.00';
+                } else {
+                    amountInput.value = '$0.00';
+                }
+            }
+        }
+    }
+
+    handleConfirmAmount(amountInput, overlay) {
+        const amount = amountInput ? amountInput.value.replace('$', '').replace('.00', '') : '';
+        
+        if (amount && !isNaN(amount) && parseInt(amount) > 0) {
+            console.log('Confirmed amount:', amount);
+            
+            if (this.currentNumpadMode === 'add') {
+                // Start NFC reader for credit receive
+                this.startReceiveNFC(parseFloat(amount));
+            } else if (this.currentNumpadMode === 'pay') {
+                // Start NFC reader for payment
+                this.startPaymentNFC();
+            }
+            
+            // Close the popup
+            if (overlay.parentNode) {
+                document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            }
+        } else {
+            alert('Please enter a valid amount');
+        }
     }
 
     async getUserCredits(userId) {
@@ -405,7 +594,7 @@ function handleProcessCredits() {
         // Start NFC manager in payment mode
         if (window.nfcManager) {
             window.nfcManager.startPayment();
-        } else {
+    } else {
             this.showNotification('NFC not available', 'error');
         }
     }
@@ -496,213 +685,10 @@ function handleProcessCredits() {
     }
 }
 
-<<<<<<< Updated upstream
-// Numpad Popup Functions
-function createNumpadOverlay() {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.addEventListener('click', function (event) {
-        if (event.target === overlay) {
-            document.body.removeChild(overlay);
-            document.body.style.overflow = '';
-        }
-    });
-    const content = document.createElement('div');
-    content.className = 'modal-content';
-    overlay.appendChild(content);
-    return { overlay, content };
-}
-=======
 // Global credit manager instance
 console.log('Creating CreditManager instance...');
 window.creditManager = new CreditManager();
 console.log('CreditManager instance created:', window.creditManager);
 
-// Numpad Modal Functions
-function initializeNumpadModal() {
-    const modal = document.getElementById('numpadModal');
-    const closeBtn = document.getElementById('closeNumpadModal');
-    const confirmBtn = document.getElementById('confirmAmount');
-    const amountInput = document.getElementById('amountInput');
-    const numpadBtns = document.querySelectorAll('.numpad-btn');
->>>>>>> Stashed changes
-
-function wireNumpadButtons(container, overlay) {
-    const backBtn = container.querySelector('.back-btn');
-    const clearBtn = container.querySelector('.clear-btn');
-    const confirmBtn = container.querySelector('.confirm-btn');
-    const numpadBtns = container.querySelectorAll('.numpad-btn');
-    const amountInput = container.querySelector('#amount-input');
-
-    // Close popup when clicking back/cancel button
-    if (backBtn) {
-        backBtn.addEventListener('click', function () {
-            if (overlay.parentNode) {
-                document.body.removeChild(overlay);
-                document.body.style.overflow = '';
-            }
-        });
-    }
-
-    // Clear input when clicking clear button
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function () {
-            if (amountInput) {
-                amountInput.value = '';
-            }
-        });
-    }
-
-    // Handle confirm button
-    if (confirmBtn) {
-        confirmBtn.addEventListener('click', function () {
-            handleConfirmAmount(amountInput, overlay);
-        });
-    }
-
-    // Handle numpad button clicks
-    numpadBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const value = this.getAttribute('data-value');
-            const action = this.getAttribute('data-action');
-            
-            if (value) {
-                addDigit(value, amountInput);
-            } else if (action) {
-                handleNumpadAction(action, amountInput);
-            }
-        });
-    });
-
-    // Handle keyboard input
-    if (amountInput) {
-        amountInput.addEventListener('keydown', function(e) {
-            // Allow only numbers and backspace
-            if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
-                e.preventDefault();
-            }
-        });
-    }
-}
-
-<<<<<<< Updated upstream
-function openNumpadPopup() {
-    fetch('numpad-popup.html', { cache: 'no-cache' })
-        .then(function (response) { return response.text(); })
-        .then(function (html) {
-            const temp = document.createElement('div');
-            temp.innerHTML = html;
-            const formContainer = temp.querySelector('.form-container');
-            if (!formContainer) throw new Error('No form-container in fetched HTML');
-
-            const { overlay, content } = createNumpadOverlay();
-            content.appendChild(formContainer);
-            document.body.appendChild(overlay);
-            document.body.style.overflow = 'hidden';
-            wireNumpadButtons(formContainer, overlay);
-            
-            // Focus on input after a short delay
-            setTimeout(() => {
-                const amountInput = formContainer.querySelector('#amount-input');
-                if (amountInput) {
-                    amountInput.focus();
-                }
-            }, 100);
-        })
-        .catch(function (error) {
-            console.error('Error loading numpad popup, using fallback template:', error);
-            // Use fallback template when fetch fails (e.g., when not using live server)
-            const template = document.getElementById('numpad-popup-template');
-            if (!template) {
-                alert('Error loading numpad popup - no fallback template found');
-                return;
-            }
-            
-            const clone = template.content.cloneNode(true);
-            const formContainer = clone.querySelector('.form-container');
-            if (!formContainer) {
-                alert('Error loading numpad popup - invalid template structure');
-                return;
-            }
-            
-            const { overlay, content } = createNumpadOverlay();
-            content.appendChild(formContainer);
-            document.body.appendChild(overlay);
-            document.body.style.overflow = 'hidden';
-            wireNumpadButtons(formContainer, overlay);
-            
-            // Focus on input after a short delay
-            setTimeout(() => {
-                const amountInput = formContainer.querySelector('#amount-input');
-                if (amountInput) {
-                    amountInput.focus();
-                }
-            }, 100);
-        });
-}
-
-function addDigit(digit, amountInput) {
-=======
-function hideNumpadModal() {
-    const modal = document.getElementById('numpadModal');
-    if (modal) {
-        modal.classList.remove('show');
-    }
-}
-
-function addDigit(digit) {
-    const amountInput = document.getElementById('amountInput');
->>>>>>> Stashed changes
-    if (amountInput) {
-        const currentValue = amountInput.value;
-        // Limit to 6 digits
-        if (currentValue.length < 6) {
-            amountInput.value = currentValue + digit;
-        }
-    }
-}
-
-function handleNumpadAction(action, amountInput) {
-    if (action === 'clear') {
-        if (amountInput) {
-            amountInput.value = '';
-        }
-    } else if (action === 'backspace') {
-        if (amountInput) {
-            const currentValue = amountInput.value;
-            amountInput.value = currentValue.slice(0, -1);
-        }
-    }
-}
-
-function handleConfirmAmount(amountInput, overlay) {
-    const amount = amountInput ? amountInput.value : '';
-    
-    if (amount && !isNaN(amount) && parseInt(amount) > 0) {
-        console.log('Confirmed amount:', amount);
-<<<<<<< Updated upstream
-        // Here you would typically process the credit amount
-        alert(`Processing credits for amount: $${amount}`);
-        
-        // Close the popup
-        if (overlay.parentNode) {
-            document.body.removeChild(overlay);
-            document.body.style.overflow = '';
-        }
-=======
->>>>>>> Stashed changes
-        
-        if (window.creditManager.currentNumpadMode === 'add') {
-            // Start NFC reader for credit receive
-            window.creditManager.startReceiveNFC(parseFloat(amount));
-        } else if (window.creditManager.currentNumpadMode === 'pay') {
-            // Start NFC reader for payment
-            window.creditManager.startPaymentNFC();
-        }
-        
-        hideNumpadModal();
-    } else {
-        alert('Please enter a valid amount');
-    }
-}
+// Numpad popup functions are now integrated into the CreditManager class
 
