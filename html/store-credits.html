@@ -84,70 +84,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>001</td>
-                                    <td>AlexWilson</td>
-                                    <td>Card</td>
-                                    <td>1000</td>
-                                    <td>3:10 PM</td>
-                                    <td>1000</td>
-                                </tr>
-                                <tr>
-                                    <td>002</td>
-                                    <td>SarahJohnson</td>
-                                    <td>Cash</td>
-                                    <td>500</td>
-                                    <td>2:45 PM</td>
-                                    <td>500</td>
-                                </tr>
-                                <tr>
-                                    <td>003</td>
-                                    <td>MikeChen</td>
-                                    <td>Card</td>
-                                    <td>750</td>
-                                    <td>2:30 PM</td>
-                                    <td>750</td>
-                                </tr>
-                                <tr>
-                                    <td>004</td>
-                                    <td>EmmaDavis</td>
-                                    <td>Transfer</td>
-                                    <td>1200</td>
-                                    <td>1:15 PM</td>
-                                    <td>1200</td>
-                                </tr>
-                                <tr>
-                                    <td>005</td>
-                                    <td>DavidBrown</td>
-                                    <td>Card</td>
-                                    <td>300</td>
-                                    <td>12:30 PM</td>
-                                    <td>300</td>
-                                </tr>
-                                <tr>
-                                    <td>006</td>
-                                    <td>LisaGarcia</td>
-                                    <td>Cash</td>
-                                    <td>800</td>
-                                    <td>11:45 AM</td>
-                                    <td>800</td>
-                                </tr>
-                                <tr>
-                                    <td>007</td>
-                                    <td>TomWilson</td>
-                                    <td>Card</td>
-                                    <td>1500</td>
-                                    <td>10:20 AM</td>
-                                    <td>1500</td>
-                                </tr>
-                                <tr>
-                                    <td>008</td>
-                                    <td>AnnaMartinez</td>
-                                    <td>Transfer</td>
-                                    <td>600</td>
-                                    <td>9:30 AM</td>
-                                    <td>600</td>
-                                </tr>
+                                <!-- Credit transactions will be loaded dynamically -->
                             </tbody>
                         </table>
                     </div>
@@ -172,46 +109,24 @@
                 <div class="stats-section">
                     <div class="stat-item">
                         <div class="stat-label">TOTAL CREDITS</div>
-                        <div class="stat-value">$5,250</div>
+                        <div class="stat-value" id="totalCredits">$0</div>
                     </div>
                     
                     <div class="stat-item">
                         <div class="stat-label">TRANSACTIONS TODAY</div>
-                        <div class="stat-value">8</div>
+                        <div class="stat-value" id="transactionsToday">0</div>
                     </div>
                     
                     <div class="stat-item">
                         <div class="stat-label">AVERAGE AMOUNT</div>
-                        <div class="stat-value">$656</div>
+                        <div class="stat-value" id="averageAmount">$0</div>
                     </div>
                 </div>
                 
                 <div class="section-title">RECENT ACTIVITY</div>
                 
-                <div class="events-section">
-                    <div class="event-item">
-                        <div class="event-title">AlexWilson</div>
-                        <div class="event-subtitle">Card Payment</div>
-                        <div class="event-time">$1,000</div>
-                    </div>
-
-                    <div class="event-item">
-                        <div class="event-title">SarahJohnson</div>
-                        <div class="event-subtitle">Cash Deposit</div>
-                        <div class="event-time">$500</div>
-                    </div>
-
-                    <div class="event-item">
-                        <div class="event-title">MikeChen</div>
-                        <div class="event-subtitle">Card Payment</div>
-                        <div class="event-time">$750</div>
-                    </div>
-
-                    <div class="event-item">
-                        <div class="event-title">EmmaDavis</div>
-                        <div class="event-subtitle">Transfer</div>
-                        <div class="event-time">$1,200</div>
-                    </div>
+                <div class="events-section" id="recentActivity">
+                    <!-- Recent credit activity will be loaded dynamically -->
                 </div>
             </div>
         </div>
@@ -276,9 +191,89 @@
                 </div>
             </div>
         </div>
+<<<<<<< Updated upstream
     </template>
 
     <!-- JavaScript -->
+=======
+    </div>
+    
+    <!-- Firebase SDK v9+ Modular -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkFXrNVMoqgsI0BVOBaiZP0fgoLTp6bJ8",
+            authDomain: "db-aurorus.firebaseapp.com",
+            databaseURL: "https://db-aurorus-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "db-aurorus",
+            storageBucket: "db-aurorus.firebasestorage.app",
+            messagingSenderId: "1023143491483",
+            appId: "1:1023143491483:web:1083156a3d16c0a7eed33e",
+            measurementId: "G-VTBEQJ46YZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+
+        // Create compatibility layer for existing code
+        window.firebase = {
+            auth: () => auth,
+            database: () => database,
+            storage: () => storage,
+            initializeApp: () => app
+        };
+
+        // Export individual services
+        window.auth = auth;
+        window.database = database;
+        window.storage = storage;
+        window.analytics = analytics;
+
+        // Export Firebase functions for compatibility
+        window.firebaseAuth = {
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        };
+
+        window.firebaseDatabase = {
+            ref,
+            set,
+            get,
+            push,
+            update,
+            remove,
+            onValue,
+            off
+        };
+
+        window.firebaseStorage = {
+            ref: storageRef,
+            uploadBytes,
+            getDownloadURL
+        };
+
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+    
+    <!-- App Scripts -->
+    <script src="../javascript/auth.js"></script>
+    <script src="../javascript/nfc.js"></script>
+    <script src="../javascript/archive.js"></script>
+>>>>>>> Stashed changes
     <script src="../javascript/store-credits.js"></script>
 </body>
 </html>

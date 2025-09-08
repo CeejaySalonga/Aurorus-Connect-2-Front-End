@@ -57,7 +57,7 @@
                 </div>
                 
                 <div class="check-in-section">
-                    <button class="check-in-btn">
+                    <button class="check-in-btn" id="nfcCheckInBtn">
                         <i class="fas fa-file-check"></i>
                         Check-In User
                     </button>
@@ -70,96 +70,7 @@
                             <div class="header-cell">Status</div>
                         </div>
                         <div class="table-body">
-                            <div class="table-row">
-                                <div class="table-cell">001</div>
-                                <div class="table-cell">JohnDoe</div>
-                                <div class="table-cell">09:15 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">002</div>
-                                <div class="table-cell">SarahSmith</div>
-                                <div class="table-cell">10:30 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">003</div>
-                                <div class="table-cell">MikeJohnson</div>
-                                <div class="table-cell">11:45 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">004</div>
-                                <div class="table-cell">EmilyDavis</div>
-                                <div class="table-cell">02:20 PM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">005</div>
-                                <div class="table-cell">AlexWilson</div>
-                                <div class="table-cell">03:10 PM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">001</div>
-                                <div class="table-cell">JohnDoe</div>
-                                <div class="table-cell">09:15 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">002</div>
-                                <div class="table-cell">SarahSmith</div>
-                                <div class="table-cell">10:30 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">003</div>
-                                <div class="table-cell">MikeJohnson</div>
-                                <div class="table-cell">11:45 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">004</div>
-                                <div class="table-cell">EmilyDavis</div>
-                                <div class="table-cell">02:20 PM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">005</div>
-                                <div class="table-cell">AlexWilson</div>
-                                <div class="table-cell">03:10 PM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">001</div>
-                                <div class="table-cell">JohnDoe</div>
-                                <div class="table-cell">09:15 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">002</div>
-                                <div class="table-cell">SarahSmith</div>
-                                <div class="table-cell">10:30 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">003</div>
-                                <div class="table-cell">MikeJohnson</div>
-                                <div class="table-cell">11:45 AM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">004</div>
-                                <div class="table-cell">EmilyDavis</div>
-                                <div class="table-cell">02:20 PM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
-                            <div class="table-row">
-                                <div class="table-cell">005</div>
-                                <div class="table-cell">AlexWilson</div>
-                                <div class="table-cell">03:10 PM</div>
-                                <div class="table-cell status-active">Active</div>
-                            </div>
+                            <!-- Check-in data will be loaded dynamically -->
                         </div>
                         <div class="table-pagination" aria-label="User table pagination controls">
                             <div class="pagination-left">
@@ -181,9 +92,23 @@
                         </div>
                     </div>
                     
-                    <button class="terminal-btn">
+                    <button class="terminal-btn" id="terminalToggle">
                         Show Terminal
                     </button>
+                </div>
+                
+                <!-- Terminal Section -->
+                <div id="terminal" class="terminal hidden">
+                    <div class="terminal-header">
+                        <h4>NFC Terminal</h4>
+                        <div class="terminal-actions">
+                            <button id="clearTerminal" class="btn-small">Clear</button>
+                            <button id="closeTerminal" class="btn-close">&times;</button>
+                        </div>
+                    </div>
+                    <div id="terminalContent" class="terminal-content">
+                        <!-- Terminal logs will appear here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -197,70 +122,105 @@
                 <div class="stats-section">
                     <div class="stat-item">
                         <div class="stat-label">CHECK-INS TODAY</div>
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="checkinsToday">0</div>
                     </div>
                     
                     <div class="stat-item">
                         <div class="stat-label">CREDITS TRANSACTED</div>
-                        <div class="stat-value">1200</div>
+                        <div class="stat-value" id="creditsTransacted">0</div>
                     </div>
                     
                     <div class="stat-item">
                         <div class="stat-label">TOURNAMENTS TODAY</div>
-                        <div class="stat-value">2</div>
+                        <div class="stat-value" id="tournamentsToday">0</div>
                     </div>
                 </div>
                 
                 <div class="section-title">TODAY</div>
                 
-                <div class="events-section">
-                    
-                    <div class="event-item">
-                        <div class="event-title">VANGUARD</div>
-                        <div class="event-subtitle">Standard Tournament</div>
-                        <div class="event-time">7 PM</div>
-                    </div>
-
-
-                    <div class="event-item">
-                        <div class="event-title">VANGUARD</div>
-                        <div class="event-subtitle">Standard Tournament</div>
-                        <div class="event-time">7 PM</div>
-                    </div>  
-
-                    <div class="event-item">
-                        <div class="event-title">VANGUARD</div>
-                        <div class="event-subtitle">Standard Tournament</div>
-                        <div class="event-time">7 PM</div>
-                    </div>
-
-                    <div class="event-item">
-                        <div class="event-title">VANGUARD</div>
-                        <div class="event-subtitle">Standard Tournament</div>
-                        <div class="event-time">7 PM</div>
-                    </div>
-
-                    <div class="event-item">
-                        <div class="event-title">VANGUARD</div>
-                        <div class="event-subtitle">Standard Tournament</div>
-                        <div class="event-time">7 PM</div>
-                    </div>
-                    
-                    <div class="event-item">
-                        <div class="event-title">YU-GI-OH!</div>
-                        <div class="event-subtitle">Casual Tournament</div>
-                        <div class="event-time">3 PM</div>
-                    </div>
-                    
-                    <div class="event-item">
-                        <div class="event-title">YU-GI-OH!</div>
-                        <div class="event-subtitle">Casual Tournament</div>
-                        <div class="event-time">3 PM</div>
-                    </div>
+                <div class="events-section" id="todayEvents">
+                    <!-- Today's events will be loaded dynamically -->
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Firebase SDK v9+ Modular -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkFXrNVMoqgsI0BVOBaiZP0fgoLTp6bJ8",
+            authDomain: "db-aurorus.firebaseapp.com",
+            databaseURL: "https://db-aurorus-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "db-aurorus",
+            storageBucket: "db-aurorus.firebasestorage.app",
+            messagingSenderId: "1023143491483",
+            appId: "1:1023143491483:web:1083156a3d16c0a7eed33e",
+            measurementId: "G-VTBEQJ46YZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+
+        // Create compatibility layer for existing code
+        window.firebase = {
+            auth: () => auth,
+            database: () => database,
+            storage: () => storage,
+            initializeApp: () => app
+        };
+
+        // Export individual services
+        window.auth = auth;
+        window.database = database;
+        window.storage = storage;
+        window.analytics = analytics;
+
+        // Export Firebase functions for compatibility
+        window.firebaseAuth = {
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        };
+
+        window.firebaseDatabase = {
+            ref,
+            set,
+            get,
+            push,
+            update,
+            remove,
+            onValue,
+            off
+        };
+
+        window.firebaseStorage = {
+            ref: storageRef,
+            uploadBytes,
+            getDownloadURL
+        };
+
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+    
+    <!-- App Scripts -->
+    <script src="../javascript/auth.js"></script>
+    <script src="../javascript/nfc.js"></script>
+    <script src="../javascript/archive.js"></script>
     <script src="../javascript/pagination.js"></script>
+    <script src="../javascript/main.js"></script>
 </body>
 </html>
