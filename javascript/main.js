@@ -160,26 +160,32 @@ class App {
         try {
             // Check if user already checked in today
             const today = new Date().toISOString().split('T')[0];
-            const checkInRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + userId);
-            const snapshot = await window.firebaseDatabase.get(checkInRef);
-            const existingCheckIn = snapshot.val();
-            
-            if (existingCheckIn && existingCheckIn.timestamp && existingCheckIn.timestamp.startsWith(today)) {
+            // Use userId as the key with nested checkins
+            const userRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + userId);
+            const snapshot = await window.firebaseDatabase.get(userRef);
+            const existing = snapshot.val();
+
+            const alreadyToday = (() => {
+                if (!existing) return false;
+                if (typeof existing === 'string') return existing.startsWith(today);
+                if (existing && typeof existing.timestamp === 'string') return existing.timestamp.startsWith(today);
+                if (typeof existing === 'object') {
+                    return Object.values(existing).some(v => {
+                        if (typeof v === 'string') return v.startsWith(today);
+                        return v && typeof v.timestamp === 'string' && v.timestamp.startsWith(today);
+                    });
+                }
+                return false;
+            })();
+            if (alreadyToday) {
                 this.showNotification('User has already checked in today', 'error');
                 return;
             }
 
-            // Save check-in to Firebase
-            const checkInData = {
-                userId: userId,
-                userName: userName,
-                timestamp: new Date().toISOString(),
-                date: today,
-                status: 'Present',
-                method: 'Manual Entry'
-            };
-
-            await window.firebaseDatabase.set(checkInRef, checkInData);
+            // Save check-in as child node with timestamp
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const checkinRef = window.firebaseDatabase.push(userRef);
+            await window.firebaseDatabase.set(checkinRef, { timestamp });
             
             this.showNotification(`Check-in successful for ${userName}`, 'success');
             
@@ -256,9 +262,22 @@ class DashboardManager {
             const today = new Date().toISOString().split('T')[0];
             const checkInsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN'));
             const checkIns = checkInsSnapshot.val() || {};
-            const todayCheckIns = Object.values(checkIns).filter(checkIn => 
-                checkIn.timestamp && checkIn.timestamp.startsWith(today)
-            ).length;
+            let todayCheckIns = 0;
+            Object.values(checkIns).forEach(value => {
+                if (typeof value === 'string') {
+                    if (value.startsWith(today)) todayCheckIns += 1;
+                } else if (value && typeof value.timestamp === 'string') {
+                    if (value.timestamp.startsWith(today)) todayCheckIns += 1;
+                } else if (value && typeof value === 'object') {
+                    Object.values(value).forEach(v => {
+                        if (typeof v === 'string') {
+                            if (v.startsWith(today)) todayCheckIns += 1;
+                        } else if (v && typeof v.timestamp === 'string') {
+                            if (v.timestamp.startsWith(today)) todayCheckIns += 1;
+                        }
+                    });
+                }
+            });
 
             const todayCheckinsElement = document.querySelector('.stat-item:nth-child(1) .stat-value');
             if (todayCheckinsElement) {
@@ -320,15 +339,51 @@ class DashboardManager {
             const checkIns = snapshot.val() || {};
             
             const today = new Date().toISOString().split('T')[0];
-            const todayCheckIns = Object.entries(checkIns)
-                .filter(([_, checkIn]) => checkIn.timestamp && checkIn.timestamp.startsWith(today))
-                .map(([userId, checkIn]) => ({
-                    userId,
-                    userName: checkIn.userName,
-                    time: new Date(checkIn.timestamp).toLocaleTimeString(),
-                    status: checkIn.status || 'Present'
-                }))
-                .sort((a, b) => b.time.localeCompare(a.time));
+            const todayCheckIns = [];
+            Object.entries(checkIns).forEach(([userId, value]) => {
+                if (typeof value === 'string') {
+                    if (value.startsWith(today)) {
+                        todayCheckIns.push({
+                            userId,
+                            userName: userId,
+                            time: new Date(value.replace(' ', 'T')).toLocaleTimeString(),
+                            status: 'Present'
+                        });
+                    }
+                } else if (value && typeof value.timestamp === 'string') {
+                    if (value.timestamp.startsWith(today)) {
+                        todayCheckIns.push({
+                            userId,
+                            userName: value.userName || userId,
+                            time: new Date(value.timestamp).toLocaleTimeString(),
+                            status: value.status || 'Present'
+                        });
+                    }
+                } else if (value && typeof value === 'object') {
+                    Object.values(value).forEach(v => {
+                        if (typeof v === 'string') {
+                            if (v.startsWith(today)) {
+                                todayCheckIns.push({
+                                    userId,
+                                    userName: userId,
+                                    time: new Date(v.replace(' ', 'T')).toLocaleTimeString(),
+                                    status: 'Present'
+                                });
+                            }
+                        } else if (v && typeof v.timestamp === 'string') {
+                            if (v.timestamp.startsWith(today)) {
+                                todayCheckIns.push({
+                                    userId,
+                                    userName: v.userName || userId,
+                                    time: new Date(v.timestamp).toLocaleTimeString(),
+                                    status: v.status || 'Present'
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            todayCheckIns.sort((a, b) => b.time.localeCompare(a.time));
 
             this.renderCheckInTable(todayCheckIns);
         } catch (error) {

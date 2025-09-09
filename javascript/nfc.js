@@ -217,25 +217,34 @@ class NFCManager {
             
             // Check if user already checked in today
             const today = new Date().toISOString().split('T')[0];
-            const checkInRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + userData.userId);
-            const snapshot = await window.firebaseDatabase.get(checkInRef);
-            const existingCheckIn = snapshot.val();
+            // Store check-in under userId with a generated checkin node
+            const userKey = userData.userId;
+            const userRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + userKey);
+            const snapshot = await window.firebaseDatabase.get(userRef);
+            const existing = snapshot.val();
             
-            if (existingCheckIn && existingCheckIn.timestamp && existingCheckIn.timestamp.startsWith(today)) {
+            // Prevent duplicate same-day check-in (handles legacy flat/string/object forms)
+            const alreadyToday = (() => {
+                if (!existing) return false;
+                if (typeof existing === 'string') return existing.startsWith(today);
+                if (existing.timestamp && typeof existing.timestamp === 'string') return existing.timestamp.startsWith(today);
+                if (typeof existing === 'object') {
+                    return Object.values(existing).some(v => {
+                        if (typeof v === 'string') return v.startsWith(today);
+                        return v && typeof v.timestamp === 'string' && v.timestamp.startsWith(today);
+                    });
+                }
+                return false;
+            })();
+            if (alreadyToday) {
                 this.showError('User has already checked in today');
                 return;
             }
 
-            // Save check-in to Firebase
-            const checkInData = {
-                userId: userData.userId,
-                userName: userData.userName,
-                timestamp: new Date().toISOString(),
-                date: today,
-                status: 'Present'
-            };
-
-            await window.firebaseDatabase.set(checkInRef, checkInData);
+            // Save check-in to Firebase with nested structure: userId/checkinId -> { timestamp }
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const checkinRef = window.firebaseDatabase.push(userRef);
+            await window.firebaseDatabase.set(checkinRef, { timestamp });
             
             this.log('Check-in saved successfully');
             this.showSuccessModal('Check-in', userData.userName, 'Check-in successful');
