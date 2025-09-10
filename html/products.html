@@ -133,47 +133,31 @@
                         <i class="fas fa-plus"></i>
                         Create Product
                     </button>
+                    <div class="products-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input id="productsSearch" type="text" placeholder="Search products..." aria-label="Search products">
+                    </div>
                 </div>
                 
                 <!-- Category Filter Section -->
                 <div class="category-filter-section">
                     <div class="category-dropdowns">
                         <div class="dropdown-container">
-                            <button class="category-dropdown-btn" onclick="toggleDropdown('vanguard')">
-                                <span>Cardfight Vanguard</span>
+                            <button class="category-dropdown-btn" onclick="toggleDropdown('category')">
+                                <span>Category</span>
                                 <i class="fas fa-chevron-down"></i>
                             </button>
-                            <div class="dropdown-content" id="vanguard-dropdown">
-                                <a href="#" class="dropdown-item">Singles</a>
-                                <a href="#" class="dropdown-item">Sealed Products</a>
-                                <a href="#" class="dropdown-item">Gaming Accessories</a>
-                                <a href="#" class="dropdown-item">Pre-Order</a>
+                            <div class="dropdown-content" id="category-dropdown">
+                                <!-- populated by JS -->
                             </div>
                         </div>
-                        
                         <div class="dropdown-container">
-                            <button class="category-dropdown-btn" onclick="toggleDropdown('union')">
-                                <span>Union Arena</span>
+                            <button class="category-dropdown-btn" onclick="toggleDropdown('variant')">
+                                <span>Variant</span>
                                 <i class="fas fa-chevron-down"></i>
                             </button>
-                            <div class="dropdown-content" id="union-dropdown">
-                                <a href="#" class="dropdown-item">Singles</a>
-                                <a href="#" class="dropdown-item">Sealed Products</a>
-                                <a href="#" class="dropdown-item">Gaming Accessories</a>
-                                <a href="#" class="dropdown-item">Pre-Order</a>
-                            </div>
-                        </div>
-                        
-                        <div class="dropdown-container">
-                            <button class="category-dropdown-btn" onclick="toggleDropdown('grand')">
-                                <span>Grand Archive</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content" id="grand-dropdown">
-                                <a href="#" class="dropdown-item">Singles</a>
-                                <a href="#" class="dropdown-item">Sealed Products</a>
-                                <a href="#" class="dropdown-item">Gaming Accessories</a>
-                                <a href="#" class="dropdown-item">Pre-Order</a>
+                            <div class="dropdown-content" id="variant-dropdown">
+                                <!-- populated by JS -->
                             </div>
                         </div>
                     </div>
@@ -188,6 +172,7 @@
                             <div class="header-cell">Stock</div>
                             <div class="header-cell">Category</div>
                             <div class="header-cell">Variant</div>
+                            <div class="header-cell">Actions</div>
                         </div>
                         <div class="table-body" id="productsTableBody">
                             <!-- Products will be loaded dynamically -->

@@ -11,6 +11,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
+    gap: 12px;
     padding-bottom: 20px;
     margin-bottom: 20px;
     flex-shrink: 0;
@@ -22,11 +23,7 @@
     flex-shrink: 0;
 }
 
-.category-dropdowns {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
+/* remove custom filters styling and keep original dropdown styles */
 
 .dropdown-container {
     position: relative;
@@ -124,7 +121,7 @@
 
 .table-header {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr;
     background-color: #f8f9fa;
     border-bottom: 2px solid #e9ecef;
 }
@@ -152,7 +149,7 @@
 
 .table-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr;
     border-bottom: 1px solid #e9ecef;
     transition: background-color 0.2s ease;
 }
@@ -177,6 +174,55 @@
     border-right: none;
 }
 
+/* Action buttons in table */
+.table-cell .btn-view,
+.table-cell .btn-edit {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    margin-right: 8px;
+}
+
+.table-cell .btn-view i,
+.table-cell .btn-edit i {
+    pointer-events: none;
+}
+
+.table-cell .btn-view {
+    color: #6c757d;
+    border-color: #cfd4da;
+}
+
+.table-cell .btn-view:hover {
+    background-color: #6c757d;
+    color: #fff;
+    border-color: #6c757d;
+}
+
+.table-cell .btn-edit {
+    color: #3482B4;
+    border-color: #3482B4;
+}
+
+.table-cell .btn-edit:hover {
+    background-color: #3482B4;
+    color: #fff;
+    border-color: #3482B4;
+}
+
+.table-cell .btn-view:active,
+.table-cell .btn-edit:active {
+    transform: translateY(0.5px);
+}
+
 .create-product-btn {
     background-color: #28A745;
     color: white;
@@ -197,6 +243,29 @@
     background-color: #218838;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+/* Products search */
+.products-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-left: auto;
+}
+
+.products-search i {
+    color: #6c757d;
+}
+
+.products-search input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    min-width: 260px;
 }
 
 /* Pagination Controls */

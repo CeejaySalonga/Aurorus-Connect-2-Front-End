@@ -2,6 +2,8 @@ class ProductManager {
     constructor() {
         this.products = [];
         this.currentImageBase64 = '';
+        this.filteredProducts = null;
+        this.activeFilters = { category: '', variant: '' };
         this.init();
     }
 
@@ -48,10 +50,81 @@ class ProductManager {
             })) : [];
             
             this.renderProducts();
+            this.wireSearch();
+            this.initDropdownFilters();
         } catch (error) {
             console.error('Error loading products:', error);
             this.showNotification('Error loading products', 'error');
         }
+    }
+
+    initDropdownFilters() {
+        const catMenu = document.getElementById('category-dropdown');
+        const varMenu = document.getElementById('variant-dropdown');
+        if (!catMenu || !varMenu) return;
+
+        const addItem = (menu, label, value) => {
+            const a = document.createElement('a');
+            a.href = '#';
+            a.className = 'dropdown-item';
+            a.textContent = label;
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (menu === catMenu) this.activeFilters.category = value;
+                if (menu === varMenu) this.activeFilters.variant = value;
+                this.applyFiltersAndRender();
+                // close menu
+                const parent = menu.closest('.dropdown-content');
+                parent && parent.classList.remove('show');
+            });
+            menu.appendChild(a);
+        };
+
+        // Build unique lists
+        const categories = Array.from(new Set(this.products.map(p => p.category).filter(Boolean))).sort();
+        const variants = Array.from(new Set(this.products.map(p => p.variant).filter(Boolean))).sort();
+
+        // Populate menus
+        catMenu.innerHTML = '';
+        addItem(catMenu, 'All', '');
+        categories.forEach(c => addItem(catMenu, c, c));
+
+        varMenu.innerHTML = '';
+        addItem(varMenu, 'All', '');
+        variants.forEach(v => addItem(varMenu, v, v));
+    }
+
+    applyFiltersAndRender() {
+        const q = (document.getElementById('productsSearch')?.value || '').trim().toLowerCase();
+        const { category, variant } = this.activeFilters;
+        const matches = (p) => {
+            const qOk = !q || [p.productName, p.category, p.variant, p.sku].some(v => (v || '').toLowerCase().includes(q));
+            const cOk = !category || p.category === category;
+            const vOk = !variant || p.variant === variant;
+            return qOk && cOk && vOk;
+        };
+        this.filteredProducts = this.products.filter(matches);
+        this.renderProducts();
+    }
+
+    wireSearch() {
+        const input = document.getElementById('productsSearch');
+        if (!input) return;
+        input.addEventListener('input', () => {
+            const q = input.value.trim().toLowerCase();
+            if (!q) {
+                this.filteredProducts = null;
+            } else {
+                this.filteredProducts = this.products.filter(p => {
+                    const name = (p.productName || '').toLowerCase();
+                    const category = (p.category || '').toLowerCase();
+                    const variant = (p.variant || '').toLowerCase();
+                    const sku = (p.sku || '').toLowerCase();
+                    return name.includes(q) || category.includes(q) || variant.includes(q) || sku.includes(q);
+                });
+            }
+            this.renderProducts();
+        });
     }
 
     renderProducts() {
@@ -63,8 +136,9 @@ class ProductManager {
             return;
         }
 
-        tableBody.innerHTML = this.products.map(product => `
-            <div class="table-row">
+        const list = (this.filteredProducts ?? this.products);
+        tableBody.innerHTML = list.map(product => `
+            <div class="table-row" data-id="${product.id}">
                 <div class="table-cell">${product.sku || product.id}</div>
                 <div class="table-cell">${product.productName || 'Unnamed Product'}</div>
                 <div class="table-cell">
@@ -74,8 +148,28 @@ class ProductManager {
                 </div>
                 <div class="table-cell">${product.category || 'Uncategorized'}</div>
                 <div class="table-cell">${product.variant || 'Standard'}</div>
+                <div class="table-cell">
+                    <button class="btn-view" data-action="view" aria-label="View product"><i class="fas fa-eye"></i></button>
+                    <button class="btn-edit" data-action="edit" aria-label="Edit product"><i class="fas fa-edit"></i></button>
+                </div>
             </div>
         `).join('');
+
+        // Delegate clicks for view/edit buttons
+        tableBody.removeEventListener('click', this._tableClickHandler);
+        this._tableClickHandler = (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const row = btn.closest('.table-row');
+            const productId = row && row.getAttribute('data-id');
+            if (!productId) return;
+            if (btn.dataset.action === 'view') {
+                this.viewProduct(productId);
+            } else if (btn.dataset.action === 'edit') {
+                this.editProduct(productId);
+            }
+        };
+        tableBody.addEventListener('click', this._tableClickHandler);
     }
 
     showAddProductForm(productId = null) {
@@ -100,10 +194,7 @@ class ProductManager {
                         <label for="productStock">Stock *</label>
                         <input type="number" id="productStock" min="0" required placeholder="0">
                     </div>
-                    <div class="form-group">
-                        <label for="productSku">SKU</label>
-                        <input type="text" id="productSku" placeholder="Enter SKU">
-                    </div>
+                    
                     <div class="form-group">
                         <label for="productCategory">Category</label>
                         <input type="text" id="productCategory" placeholder="Enter category">
@@ -142,7 +233,7 @@ class ProductManager {
                 document.getElementById('productName').value = product.productName || '';
                 document.getElementById('productPrice').value = product.price || '';
                 document.getElementById('productStock').value = product.stock || '';
-                document.getElementById('productSku').value = product.sku || '';
+                
                 document.getElementById('productCategory').value = product.category || '';
                 document.getElementById('productVariant').value = product.variant || '';
                 document.getElementById('productDescription').value = product.description || '';
@@ -175,7 +266,7 @@ class ProductManager {
                 productName: document.getElementById('productName').value.trim(),
                 price: parseFloat(document.getElementById('productPrice').value),
                 stock: parseInt(document.getElementById('productStock').value),
-                sku: document.getElementById('productSku').value.trim(),
+                sku: '',
                 category: document.getElementById('productCategory').value.trim(),
                 variant: document.getElementById('productVariant').value,
                 description: document.getElementById('productDescription').value.trim(),
@@ -248,6 +339,68 @@ class ProductManager {
 
     async editProduct(productId) {
         this.showAddProductForm(productId);
+    }
+
+    viewProduct(productId) {
+        const product = this.getProductById(productId);
+        if (!product) return;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.addEventListener('click', (ev) => {
+            if (ev.target === overlay) {
+                if (overlay.parentNode) document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            }
+        });
+
+        const container = document.createElement('div');
+        container.className = 'form-container';
+        container.innerHTML = `
+            <div class="form-header">
+                <h2><i class="fas fa-eye"></i> Product Preview</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-column">
+                    <div class="form-group"><label>SKU</label><div>${product.sku || ''}</div></div>
+                    <div class="form-group"><label>Name</label><div>${product.productName || ''}</div></div>
+                    <div class="form-group"><label>Price</label><div>${product.price != null ? `$${Number(product.price).toFixed(2)}` : ''}</div></div>
+                    <div class="form-group"><label>Stock</label><div>${product.stock != null ? product.stock : ''}</div></div>
+                </div>
+                <div class="form-column">
+                    <div class="form-group"><label>Category</label><div>${product.category || ''}</div></div>
+                    <div class="form-group"><label>Variant</label><div>${product.variant || ''}</div></div>
+                    <div class="form-group"><label>Image</label>
+                        <div class="upload-area" style="height:auto; border-style:solid;">
+                            ${product.image ? `<img alt="Product image" style="max-width:100%;height:auto;border-radius:8px;" src="data:image/jpeg;base64,${product.image}">` : '<span>No image</span>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="form-group"><label>Description</label><div style="white-space:pre-wrap">${product.description || ''}</div></div>
+            </div>
+            <div class="button-group">
+                <button class="back-btn" type="button"><i class="fas fa-times"></i> Close</button>
+                <div class="action-buttons">
+                    <button class="confirm-btn" type="button"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+            </div>
+        `;
+        const closeBtn = container.querySelector('.back-btn');
+        const editBtn = container.querySelector('.confirm-btn');
+        closeBtn.addEventListener('click', () => {
+            if (overlay.parentNode) document.body.removeChild(overlay);
+            document.body.style.overflow = '';
+        });
+        editBtn.addEventListener('click', () => {
+            if (overlay.parentNode) document.body.removeChild(overlay);
+            document.body.style.overflow = '';
+            this.editProduct(productId);
+        });
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
     }
 
     async deleteProduct(productId) {
