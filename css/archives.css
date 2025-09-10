@@ -1,10 +1,10 @@
 /* Archives page specific styles */
 
-.archives-top-section { display: flex; align-items: center; justify-content: space-between; padding-bottom: 15px; border-bottom: 2px solid #e9ecef; margin-bottom: 15px; flex-shrink: 0; }
+.archives-top-section { display: flex; align-items: center; justify-content: space-between; padding-bottom: 24px; border-bottom: 2px solid #e9ecef; margin-bottom: 20px; flex-shrink: 0; }
 .archives-top-section .page-title { margin: 0; }
 .archives-middle-section { margin-top: 16px; }
 .table-pagination { margin-top: 8px; }
-.archives-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 12px 0; }
+.archives-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 20px 0 12px 0; }
 .archives-toolbar-left { display:flex; align-items:center; gap:12px; }
 .archives-toolbar-right { display:flex; align-items:center; gap:12px; }
 
@@ -19,7 +19,7 @@
     background: #fff;
     border: 1px solid #e0e0e0;
     color: #333;
-    padding: 12px 20px;
+    padding: 12px 25px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 700;
@@ -27,7 +27,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-height: 40px;
+    min-height: 44px;
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
 }
 .archives-tabs .tab-btn:hover { background-color: #f8f9fa; }
