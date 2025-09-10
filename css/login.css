@@ -41,14 +41,19 @@
 .login-header .logo-icon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: none;
+    background-image: url('../assets/Aurorus_Logo.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #ffffff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    font-size: 24px;
-    color: white;
+    font-size: 0;
+    color: transparent;
 }
 
 .login-header h1 {
