@@ -338,7 +338,12 @@ class ProductManager {
     }
 
     async editProduct(productId) {
-        this.showAddProductForm(productId);
+        try {
+            await this.openEditProductPopup(productId);
+        } catch (err) {
+            console.error('Falling back to inline editor due to error loading edit-product-popup.html:', err);
+            this.showAddProductForm(productId);
+        }
     }
 
     viewProduct(productId) {
@@ -399,6 +404,161 @@ class ProductManager {
             this.editProduct(productId);
         });
         overlay.appendChild(container);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+    }
+
+    async openEditProductPopup(productId) {
+        const product = this.getProductById(productId);
+        if (!product) throw new Error('Product not found');
+
+        const response = await fetch('edit-product-popup.html', { cache: 'no-cache' });
+        const html = await response.text();
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const formContainer = temp.querySelector('.form-container');
+        if (!formContainer) throw new Error('No form-container in fetched HTML');
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.addEventListener('click', (ev) => {
+            if (ev.target === overlay) {
+                if (overlay.parentNode) document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Wire back/clear buttons
+        const backBtn = formContainer.querySelector('.back-btn');
+        const clearBtn = formContainer.querySelector('.clear-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                if (overlay.parentNode) document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                const inputs = formContainer.querySelectorAll('input, textarea, select');
+                inputs.forEach((el) => {
+                    if (el.tagName.toLowerCase() === 'select') {
+                        el.selectedIndex = 0;
+                    } else {
+                        el.value = '';
+                    }
+                });
+                formContainer.dataset.imageBase64 = '';
+                const uploadArea = formContainer.querySelector('.upload-area');
+                if (uploadArea) {
+                    uploadArea.style.backgroundImage = '';
+                    uploadArea.style.borderStyle = '';
+                }
+            });
+        }
+
+        // Prefill fields
+        const nameEl = formContainer.querySelector('#product-name');
+        const specsEl = formContainer.querySelector('#product-specs');
+        const priceEl = formContainer.querySelector('#product-price');
+        const stockEl = formContainer.querySelector('#product-stock');
+        const categoryEl = formContainer.querySelector('#product-category');
+        const variantEl = formContainer.querySelector('#product-variant');
+        const descEl = formContainer.querySelector('#product-description');
+        const imageInput = formContainer.querySelector('#product-image');
+        const uploadArea = formContainer.querySelector('.upload-area');
+
+        if (nameEl) nameEl.value = product.productName || '';
+        if (specsEl) specsEl.value = product.sku || '';
+        if (priceEl) priceEl.value = product.price != null ? product.price : '';
+        if (stockEl) stockEl.value = product.stock != null ? product.stock : '';
+        if (categoryEl) categoryEl.value = product.category || '';
+        if (variantEl) variantEl.value = product.variant || '';
+        if (descEl) descEl.value = product.description || '';
+        if (product.image) {
+            formContainer.dataset.imageBase64 = product.image;
+            if (uploadArea) {
+                uploadArea.style.backgroundImage = `url(data:image/jpeg;base64,${product.image})`;
+                uploadArea.style.backgroundSize = 'cover';
+                uploadArea.style.backgroundPosition = 'center';
+                uploadArea.style.borderStyle = 'solid';
+            }
+        }
+
+        // Image handler -> store base64 on container and preview on upload area
+        if (imageInput && uploadArea) {
+            imageInput.addEventListener('change', () => {
+                const file = imageInput.files && imageInput.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    this.showNotification('Please select a valid image file', 'error');
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    this.showNotification('Image file is too large (max 5MB)', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target && e.target.result ? String(e.target.result) : '';
+                    // Save only the base64 data part to match existing schema
+                    const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+                    formContainer.dataset.imageBase64 = base64Data;
+                    uploadArea.style.backgroundImage = dataUrl ? `url(${dataUrl})` : '';
+                    uploadArea.style.backgroundSize = 'cover';
+                    uploadArea.style.backgroundPosition = 'center';
+                    uploadArea.style.borderStyle = 'solid';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Confirm update
+        const confirmBtn = formContainer.querySelector('.confirm-btn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                try {
+                    const updated = {
+                        productName: nameEl ? nameEl.value.trim() : '',
+                        price: priceEl && priceEl.value !== '' ? parseFloat(priceEl.value) : 0,
+                        stock: stockEl && stockEl.value !== '' ? parseInt(stockEl.value) : 0,
+                        sku: specsEl ? specsEl.value.trim() : '',
+                        category: categoryEl ? categoryEl.value.trim() : '',
+                        variant: variantEl ? variantEl.value : '',
+                        description: descEl ? descEl.value.trim() : '',
+                        image: formContainer.dataset.imageBase64 || product.image || '',
+                        lastUpdated: new Date().toISOString()
+                    };
+
+                    if (!updated.productName) {
+                        this.showNotification('Product name is required', 'error');
+                        return;
+                    }
+                    if (updated.price < 0) {
+                        this.showNotification('Price cannot be negative', 'error');
+                        return;
+                    }
+                    if (updated.stock < 0) {
+                        this.showNotification('Stock cannot be negative', 'error');
+                        return;
+                    }
+
+                    await window.firebaseDatabase.update(
+                        window.firebaseDatabase.ref(window.database, 'TBL_PRODUCTS/' + productId),
+                        updated
+                    );
+                    this.showNotification('Product updated successfully', 'success');
+                    if (overlay.parentNode) document.body.removeChild(overlay);
+                    document.body.style.overflow = '';
+                    this.loadProducts();
+                } catch (error) {
+                    console.error('Error updating product:', error);
+                    this.showNotification('Error updating product. Please try again.', 'error');
+                }
+            });
+        }
+
+        overlay.appendChild(formContainer);
         document.body.appendChild(overlay);
         document.body.style.overflow = 'hidden';
     }
