@@ -4,19 +4,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
+    background: linear-gradient(135deg, #3482B4 0%, #50B4E6 100%);
+    padding: 30px;
 }
 
 .login-form {
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12);
+    padding: 48px;
     width: 100%;
-    max-width: 400px;
+    max-width: 520px;
     position: relative;
     overflow: hidden;
+    transform: translateY(-28px);
 }
 
 .login-form::before {
@@ -26,7 +27,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #3482B4, #50B4E6);
 }
 
 .login-header {
@@ -39,8 +40,8 @@
 }
 
 .login-header .logo-icon {
-    width: 60px;
-    height: 60px;
+    width: 72px;
+    height: 72px;
     background: none;
     background-image: url('../assets/Aurorus_Logo.png');
     background-size: contain;
@@ -48,6 +49,7 @@
     background-repeat: no-repeat;
     background-color: #ffffff;
     border-radius: 50%;
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -58,19 +60,19 @@
 
 .login-header h1 {
     color: #2d3748;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     margin: 0 0 8px 0;
 }
 
 .login-header p {
     color: #718096;
-    font-size: 14px;
+    font-size: 16px;
     margin: 0;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .form-group label {
@@ -83,18 +85,18 @@
 
 .form-group input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 17px;
     transition: all 0.3s ease;
     box-sizing: border-box;
 }
 
 .form-group input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #3482B4;
+    box-shadow: 0 0 0 3px rgba(52, 130, 180, 0.15);
 }
 
 .form-group input::placeholder {
@@ -102,12 +104,12 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: #3482B4;
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 17px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -118,7 +120,7 @@
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 25px rgba(52, 130, 180, 0.3);
 }
 
 .btn-primary:active {
@@ -133,6 +135,14 @@
 
 .btn-full {
     width: 100%;
+}
+
+/* Make the Sign In button a bit narrower on login page */
+.login-form .btn-primary.btn-full {
+    width: 50%;
+    max-width: 380px;
+    margin: 26px auto 0;
+    display: block;
 }
 
 .error-message {
@@ -201,14 +211,21 @@
 /* Responsive design */
 @media (max-width: 480px) {
     .login-container {
-        padding: 10px;
+        padding: 12px;
     }
     
     .login-form {
-        padding: 30px 20px;
+        padding: 34px 22px;
+        transform: translateY(-14px);
     }
     
     .login-header h1 {
-        font-size: 24px;
+        font-size: 26px;
+    }
+
+    .login-form .btn-primary.btn-full {
+        width: 100%;
+        max-width: none;
+        margin-top: 12px;
     }
 }
