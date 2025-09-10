@@ -133,35 +133,40 @@
                         <i class="fas fa-plus"></i>
                         Create Product
                     </button>
-                    <div class="products-search">
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                        <input id="productsSearch" type="text" placeholder="Search products..." aria-label="Search products">
-                    </div>
                 </div>
-                
-                <!-- Category Filter Section -->
-                <div class="category-filter-section">
-                    <div class="category-dropdowns">
-                        <div class="dropdown-container">
-                            <button class="category-dropdown-btn" onclick="toggleDropdown('category')">
-                                <span>Category</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content" id="category-dropdown">
-                                <!-- populated by JS -->
+
+                <!-- Filters Row: Category & Variant on left, Search on right -->
+                <div class="filters-row">
+                    <div class="filters-left">
+                        <div class="category-dropdowns">
+                            <div class="dropdown-container">
+                                <button class="category-dropdown-btn" onclick="toggleDropdown('category')">
+                                    <span>Category</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="dropdown-content" id="category-dropdown">
+                                    <!-- populated by JS -->
+                                </div>
                             </div>
-                        </div>
-                        <div class="dropdown-container">
-                            <button class="category-dropdown-btn" onclick="toggleDropdown('variant')">
-                                <span>Variant</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content" id="variant-dropdown">
-                                <!-- populated by JS -->
+                            <div class="dropdown-container">
+                                <button class="category-dropdown-btn" onclick="toggleDropdown('variant')">
+                                    <span>Variant</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="dropdown-content" id="variant-dropdown">
+                                    <!-- populated by JS -->
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <div class="filters-right">
+                        <div class="products-search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <input id="productsSearch" type="text" placeholder="Search products..." aria-label="Search products">
+                        </div>
+                    </div>
                 </div>
+
                 
                 <!-- Middle Section: Products Table -->
                 <div class="products-middle-section">

@@ -12,8 +12,8 @@
     justify-content: flex-start;
     align-items: center;
     gap: 12px;
-    padding-bottom: 20px;
-    margin-bottom: 20px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
     flex-shrink: 0;
 }
 
@@ -243,6 +243,23 @@
     background-color: #218838;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+.filters-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.filters-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filters-right {
+    margin-left: auto;
 }
 
 /* Products search */
