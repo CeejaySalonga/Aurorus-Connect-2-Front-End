@@ -476,45 +476,10 @@ class EventManager {
                 const temp = document.createElement('div');
                 temp.innerHTML = html;
                 const formContainer = temp.querySelector('.form-container');
-                if (formContainer) {
-                    // Wire image base64 input & preview
-                    const fileInput = formContainer.querySelector('#event-image');
-                    const preview = formContainer.querySelector('.upload-area');
-                    if (fileInput && preview) {
-                        fileInput.addEventListener('change', () => {
-                            const file = fileInput.files && fileInput.files[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const dataUrl = e.target && e.target.result ? String(e.target.result) : '';
-                                formContainer.dataset.imageBase64 = dataUrl;
-                                preview.style.backgroundImage = dataUrl ? `url(${dataUrl})` : '';
-                                preview.style.backgroundSize = 'cover';
-                                preview.style.backgroundPosition = 'center';
-                                preview.style.borderStyle = 'solid';
-                            };
-                            reader.readAsDataURL(file);
-                        });
-                    }
-                    renderFromContainer(formContainer);
-                    return;
-                }
-                throw new Error('No form in fetched HTML');
-            })
-            .catch(() => {
-                // Fallback to inline template
-                const tpl = document.getElementById('edit-event-popup-template');
-                if (!tpl) {
-                    this.showNotification('Unable to open edit popup', 'error');
-                    return;
-                }
-                const clone = tpl.content.cloneNode(true);
-                const formContainer = clone.querySelector('.form-container');
                 if (!formContainer) {
-                    this.showNotification('Unable to open edit popup', 'error');
-                    return;
+                    throw new Error('No form in fetched HTML');
                 }
-                // Wire image base64 input & preview in fallback
+                // Wire image base64 input & preview
                 const fileInput = formContainer.querySelector('#event-image');
                 const preview = formContainer.querySelector('.upload-area');
                 if (fileInput && preview) {
