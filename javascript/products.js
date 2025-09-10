@@ -131,8 +131,11 @@ class ProductManager {
         const tableBody = document.querySelector('.products-table .table-body');
         if (!tableBody) return;
 
-        if (this.products.length === 0) {
+        const allCount = (this.filteredProducts ?? this.products).length;
+        if (allCount === 0) {
             tableBody.innerHTML = '<div class="table-row"><div class="table-cell" style="grid-column: 1 / -1; text-align: center;">No products found</div></div>';
+            const pageInfoEl = document.getElementById('pageInfo');
+            if (pageInfoEl) pageInfoEl.textContent = 'Page 1 of 1 (0 rows)';
             return;
         }
 
@@ -170,6 +173,12 @@ class ProductManager {
             }
         };
         tableBody.addEventListener('click', this._tableClickHandler);
+
+        // Update simple page info text
+        const pageInfoEl = document.getElementById('pageInfo');
+        if (pageInfoEl) {
+            pageInfoEl.textContent = `Page 1 of 1 (${list.length} rows)`;
+        }
     }
 
     showAddProductForm(productId = null) {

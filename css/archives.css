@@ -1,0 +1,124 @@
+/* Archives page specific styles */
+
+.archives-top-section { display: flex; align-items: center; justify-content: space-between; padding-bottom: 15px; border-bottom: 2px solid #e9ecef; margin-bottom: 15px; flex-shrink: 0; }
+.archives-top-section .page-title { margin: 0; }
+.archives-middle-section { margin-top: 16px; }
+.table-pagination { margin-top: 8px; }
+.archives-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 12px 0; }
+.archives-toolbar-left { display:flex; align-items:center; gap:12px; }
+.archives-toolbar-right { display:flex; align-items:center; gap:12px; }
+
+/* reuse search from products */
+.products-search { display:inline-flex; align-items:center; gap:8px; border:1px solid #e0e0e0; background:#fff; border-radius:8px; padding:8px 10px; }
+.products-search i { color:#6c757d; }
+.products-search input { border:none; outline:none; font-size:14px; min-width:240px; }
+
+/* Tabs for switching between archived Products and Events */
+.archives-tabs { display: flex; gap: 8px; margin: 12px 0; }
+.archives-tabs .tab-btn {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+.archives-tabs .tab-btn:hover { background-color: #f8f9fa; }
+.archives-tabs .tab-btn.active { background: #3482B4; color: #fff; border-color: #3482B4; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Table container to match products design */
+.transactions-table-container {
+    background-color: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-scroll { overflow-y: auto; }
+
+/* Table visuals */
+.transactions-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.transactions-table thead { background-color: #f8f9fa; }
+.transactions-table thead th {
+    font-weight: bold;
+    color: #333;
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 2px solid #e9ecef;
+    border-right: 1px solid #e9ecef;
+}
+.transactions-table thead th:last-child { border-right: none; }
+.transactions-table tbody td {
+    color: #333;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    background-color: #fff;
+    border-right: 1px solid #e9ecef;
+}
+.transactions-table tbody td:last-child { border-right: none; }
+.transactions-table tbody tr:hover td { background-color: #f8f9fa; }
+
+/* Ensure header and body columns align */
+.transactions-table thead tr th:nth-child(1),
+.transactions-table tbody tr td:nth-child(1) { width: 50%; }
+.transactions-table thead tr th:nth-child(2),
+.transactions-table tbody tr td:nth-child(2) { width: 25%; }
+.transactions-table thead tr th:nth-child(3),
+.transactions-table tbody tr td:nth-child(3) { width: 100px; }
+.transactions-table td { vertical-align: middle; white-space: nowrap; }
+.transactions-table td:nth-child(1) { white-space: normal; }
+.transactions-table td:nth-child(3),
+.transactions-table th:nth-child(3) { text-align: center; padding-left: 8px; padding-right: 8px; }
+
+/* Action buttons (match products table look) */
+/* Action buttons */
+.archives-actions { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.archives-actions .btn-view,
+.archives-actions .btn-edit,
+.transactions-table .btn-view,
+.transactions-table .btn-edit {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    width: 34px;
+    height: 34px;
+}
+.archives-actions .btn-view,
+.transactions-table .btn-view { color: #6c757d; border-color: #cfd4da; }
+.archives-actions .btn-view:hover,
+.transactions-table .btn-view:hover { background-color: #6c757d; color: #fff; border-color: #6c757d; }
+.archives-actions .btn-edit,
+.transactions-table .btn-edit { color: #3482B4; border-color: #3482B4; }
+.archives-actions .btn-edit:hover,
+.transactions-table .btn-edit:hover { background-color: #3482B4; color: #fff; border-color: #3482B4; }
+.archives-actions img.preview { width: 40px; height: 40px; border-radius: 6px; border: 1px solid #e9ecef; }
+
+/* Pagination Controls (match products) */
+.table-pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 15px; background-color: #f8f9fa; border-top: 2px solid #e9ecef; flex-wrap: wrap; }
+.table-pagination .pagination-left, .table-pagination .pagination-right { display: flex; align-items: center; gap: 10px; }
+.table-pagination label { color: #333; font-size: 14px; }
+.table-pagination select { padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; font-size: 14px; color: #333; }
+.table-pagination button { background: #fff; color: #333; border: 1px solid #e0e0e0; padding: 6px 10px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+.table-pagination button:hover:not(:disabled) { background-color: #3482B4; color: #fff; border-color: #3482B4; }
+.table-pagination button:disabled { opacity: 0.5; cursor: default; }
+.table-pagination #pageInfo { font-size: 14px; color: #555; min-width: 140px; text-align: center; }
+
+

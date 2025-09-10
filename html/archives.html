@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurorus Connect - Archives</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/archives.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Page-specific styles moved to archives.css -->
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar Container -->
+        <div class="sidebar-container">
+            <div class="sidebar">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-dragon"></i>
+                    </div>
+                </div>
+                
+                <nav class="nav-menu">
+                    <a href="index.html" class="nav-item">
+                        <i class="fas fa-user-check"></i>
+                        <span class="nav-label">Check in</span>
+                    </a>
+                    <a href="store-credits.html" class="nav-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span class="nav-label">Store Credits</span>
+                    </a>
+                    <a href="products.html" class="nav-item">
+                        <i class="fas fa-box"></i>
+                        <span class="nav-label">Products</span>
+                    </a>
+                    <a href="events.html" class="nav-item">
+                        <i class="fas fa-calendar"></i>
+                        <span class="nav-label">Events</span>
+                    </a>
+                    <div class="nav-item active">
+                        <i class="fas fa-archive"></i>
+                        <span class="nav-label">Archives</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-download"></i>
+                        <span class="nav-label">Export</span>
+                    </div>
+                    <div class="nav-item logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="nav-label">Logout</span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Container -->
+        <div class="main-container">
+            <div class="main-content">
+                <!-- Top Section: Header -->
+                <div class="archives-top-section">
+                    <h1 class="page-title">Archives</h1>
+                </div>
+
+                <!-- Toolbar: Tabs on left, Search and Export on right -->
+                <div class="archives-toolbar">
+                    <div class="archives-toolbar-left">
+                        <div class="archives-tabs">
+                            <button class="tab-btn active" data-target="#tab-products"><i class="fas fa-box"></i> Products</button>
+                            <button class="tab-btn" data-target="#tab-events"><i class="fas fa-calendar"></i> Events</button>
+                        </div>
+                    </div>
+                    <div class="archives-toolbar-right">
+                        <div class="products-search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <input id="archivesSearch" type="text" placeholder="Search archived items..." aria-label="Search archived items">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Section: Archives Table (Scrollable) -->
+                <div class="archives-middle-section">
+                    <!-- Products Tab -->
+                    <div class="tab-pane active" id="tab-products">
+                        <div class="transactions-table-container">
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Date Archived</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="archivesTableBody">
+                                        <tr>
+                                            <td>Ultra Ball</td>
+                                            <td>2025-08-15</td>
+                                            <td>
+                                                <div class="archives-actions">
+                                                    <button class="btn-view" title="Preview" aria-label="Preview archived product"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Charizard Booster Box</td>
+                                            <td>2025-08-02</td>
+                                            <td>
+                                                <div class="archives-actions">
+                                                    <button class="btn-view" title="Preview" aria-label="Preview archived product"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Pikachu Sleeve Pack</td>
+                                            <td>2025-07-28</td>
+                                            <td>
+                                                <div class="archives-actions">
+                                                    <button class="btn-view" title="Preview" aria-label="Preview archived product"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="table-pagination" aria-label="Archives pagination controls">
+                            <div class="pagination-left">
+                                <label for="pageSizeSelect">Rows per page:</label>
+                                <select id="pageSizeSelect">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                            <div class="pagination-right">
+                                <button id="firstPageBtn" type="button">« First</button>
+                                <button id="prevPageBtn" type="button">‹ Prev</button>
+                                <span id="pageInfo" aria-live="polite"></span>
+                                <button id="nextPageBtn" type="button">Next ›</button>
+                                <button id="lastPageBtn" type="button">Last »</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Events Tab -->
+                    <div class="tab-pane" id="tab-events">
+                        <div class="transactions-table-container">
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Event</th>
+                                            <th>Date Archived</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="archivesEventsTableBody">
+                                        <tr>
+                                            <td>Weekly Tournament</td>
+                                            <td>2025-08-10</td>
+                                            <td>
+                                                <div class="archives-actions">
+                                                    <button class="btn-view" title="Preview" aria-label="Preview archived event"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Launch Party</td>
+                                            <td>2025-07-20</td>
+                                            <td>
+                                                <div class="archives-actions">
+                                                    <button class="btn-view" title="Preview" aria-label="Preview archived event"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="table-pagination" aria-label="Archived events pagination controls">
+                            <div class="pagination-left">
+                                <label for="pageSizeSelectEvents">Rows per page:</label>
+                                <select id="pageSizeSelectEvents">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                            <div class="pagination-right">
+                                <button id="firstPageBtnEvents" type="button">« First</button>
+                                <button id="prevPageBtnEvents" type="button">‹ Prev</button>
+                                <span id="pageInfoEvents" aria-live="polite"></span>
+                                <button id="nextPageBtnEvents" type="button">Next ›</button>
+                                <button id="lastPageBtnEvents" type="button">Last »</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Dashboard Container -->
+        <div class="dashboard-container">
+            <div class="dashboard">
+                <h2 class="dashboard-title">Aurorus Connect</h2>
+                <p class="date">Monday, August 11</p>
+                
+                <div class="stats-section">
+                    <div class="stat-item">
+                        <div class="stat-label">ARCHIVED ITEMS</div>
+                        <div class="stat-value" id="archivedItems">0</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-label">LAST 7 DAYS</div>
+                        <div class="stat-value" id="archivedLast7">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK v9+ Modular -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkFXrNVMoqgsI0BVOBaiZP0fgoLTp6bJ8",
+            authDomain: "db-aurorus.firebaseapp.com",
+            databaseURL: "https://db-aurorus-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "db-aurorus",
+            storageBucket: "db-aurorus.firebasestorage.app",
+            messagingSenderId: "1023143491483",
+            appId: "1:1023143491483:web:1083156a3d16c0a7eed33e",
+            measurementId: "G-VTBEQJ46YZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+
+        // Create compatibility layer for existing code
+        window.firebase = {
+            auth: () => auth,
+            database: () => database,
+            storage: () => storage,
+            initializeApp: () => app
+        };
+
+        // Export individual services
+        window.auth = auth;
+        window.database = database;
+        window.storage = storage;
+        window.analytics = analytics;
+
+        // Export Firebase functions for compatibility
+        window.firebaseAuth = {
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        };
+
+        window.firebaseDatabase = {
+            ref,
+            set,
+            get,
+            push,
+            update,
+            remove,
+            onValue,
+            off
+        };
+
+        window.firebaseStorage = {
+            ref: storageRef,
+            uploadBytes,
+            getDownloadURL
+        };
+
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+    
+    <!-- App Scripts -->
+    <script src="../javascript/auth.js"></script>
+    <script src="../javascript/archive.js"></script>
+    <script src="../javascript/pagination.js"></script>
+</body>
+</html>
+

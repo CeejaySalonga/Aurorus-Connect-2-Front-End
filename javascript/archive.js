@@ -14,6 +14,12 @@ class ArchiveManager {
                 this.loadArchiveData();
             });
         }
+        // Wire tabs UI (UI only)
+        this.initTabs();
+        this.initSearch();
+        // Initialize page info text for events/products (UI only)
+        this.updatePageInfo('#archivesTableBody', '#pageInfo');
+        this.updatePageInfo('#archivesEventsTableBody', '#pageInfoEvents');
     }
 
     setupEventListeners() {
@@ -31,6 +37,36 @@ class ArchiveManager {
                 this.showExportOptions();
             }
         });
+    }
+
+    initTabs() {
+        const tabs = document.querySelectorAll('.archives-tabs .tab-btn');
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const target = btn.getAttribute('data-target');
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    if ('#' + pane.id === target) pane.classList.add('active');
+                    else pane.classList.remove('active');
+                });
+                // Refresh page info of the active tab when switching
+                if (target === '#tab-events') {
+                    this.updatePageInfo('#archivesEventsTableBody', '#pageInfoEvents');
+                } else if (target === '#tab-products') {
+                    this.updatePageInfo('#archivesTableBody', '#pageInfo');
+                }
+            });
+        });
+    }
+
+    updatePageInfo(tbodySelector, pageInfoSelector) {
+        const body = document.querySelector(tbodySelector);
+        const info = document.querySelector(pageInfoSelector);
+        if (!body || !info) return;
+        const visibleRows = Array.from(body.querySelectorAll('tr')).filter(tr => tr.style.display !== 'none');
+        const total = visibleRows.length;
+        info.textContent = `Page 1 of 1 (${total} rows)`;
     }
 
     async loadArchiveData() {
@@ -60,6 +96,25 @@ class ArchiveManager {
             console.error('Error loading archive data:', error);
             this.showNotification('Error loading archive data', 'error');
         }
+    }
+
+    initSearch() {
+        const input = document.getElementById('archivesSearch');
+        if (!input) return;
+        input.addEventListener('input', () => {
+            const q = input.value.trim().toLowerCase();
+            const tbody = document.querySelector('#tab-products.active #archivesTableBody') || document.getElementById('archivesTableBody');
+            const etbody = document.querySelector('#tab-events.active #archivesEventsTableBody') || document.getElementById('archivesEventsTableBody');
+            const filterRows = (tb) => {
+                if (!tb) return;
+                Array.from(tb.querySelectorAll('tr')).forEach(tr => {
+                    const text = tr.textContent.toLowerCase();
+                    tr.style.display = !q || text.includes(q) ? '' : 'none';
+                });
+            };
+            filterRows(tbody);
+            filterRows(etbody);
+        });
     }
 
     showExportOptions() {
