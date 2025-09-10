@@ -1,6 +1,8 @@
 class EventManager {
     constructor() {
         this.events = [];
+        this.imageObjectUrls = new Map();
+        this.eventsUnsubscribe = null;
         this.init();
     }
 
@@ -26,7 +28,7 @@ class EventManager {
                 const eventTitle = eventCard.querySelector('.event-card-title').textContent;
                 const event = this.events.find(evt => evt.eventName === eventTitle);
                 if (event) {
-                    this.editEvent(event.id);
+                    this.openEditEventPopup(event);
                 }
             }
         });
@@ -42,13 +44,41 @@ class EventManager {
 
     async loadEvents() {
         try {
-            const snapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_EVENTS'));
-            this.events = snapshot.val() ? Object.entries(snapshot.val()).map(([id, data]) => ({
-                id,
-                ...data
-            })) : [];
-            
-            this.renderEvents();
+            // Detach previous listener if any to avoid duplicate renders
+            if (this.eventsUnsubscribe) {
+                try { window.firebaseDatabase.off(this.eventsUnsubscribe); } catch (_) { /* no-op */ }
+                this.eventsUnsubscribe = null;
+            }
+
+            const eventsRef = window.firebaseDatabase.ref(window.database, 'TBL_EVENTS');
+            this.eventsUnsubscribe = eventsRef;
+
+            window.firebaseDatabase.onValue(eventsRef, (snapshot) => {
+                this.events = snapshot.val() ? Object.entries(snapshot.val()).map(([id, data]) => {
+                    // Normalize possible image fields coming from DB
+                    const imageBase64 = (data && (
+                        data.imageBase64 ||
+                        data.eventImageBase64 ||
+                        data.bannerImageBase64 ||
+                        data.imageUrlBase64 ||
+                        data.image // may contain base64 or URL
+                    )) || null;
+
+                    const imageUrl = (data && (
+                        data.imageUrl ||
+                        (typeof data.image === 'string' && data.image.startsWith('http') ? data.image : null)
+                    )) || null;
+
+                    return {
+                        id,
+                        ...data,
+                        imageBase64,
+                        imageUrl
+                    };
+                }) : [];
+
+                this.renderEvents();
+            });
         } catch (error) {
             console.error('Error loading events:', error);
             this.showNotification('Error loading events', 'error');
@@ -71,6 +101,9 @@ class EventManager {
             return dateA - dateB;
         });
 
+        // Revoke any previously created object URLs to avoid leaks before re-render
+        this.revokeAllImageObjectUrls();
+
         eventsList.innerHTML = sortedEvents.map(event => {
             const eventDate = event.eventDate ? new Date(event.eventDate) : null;
             const isUpcoming = eventDate && eventDate >= new Date();
@@ -78,7 +111,7 @@ class EventManager {
             
             return `
                 <div class="event-card">
-                    <div class="event-image">
+                    <div class="event-image" data-event-id="${event.id}">
                         <div class="event-image-overlay">
                             <div class="event-banner-text">${event.eventName || 'EVENT'}</div>
                             <div class="event-banner-subtitle">${event.location || 'LOCATION'}</div>
@@ -93,6 +126,111 @@ class EventManager {
                 </div>
             `;
         }).join('');
+
+        // After rendering, shrink long titles so they fit in the card
+        this.autosizeEventTitles();
+
+        // After rendering, hydrate images (base64 or direct URL)
+        this.hydrateEventImages(sortedEvents);
+    }
+
+    autosizeEventTitles() {
+        const titles = document.querySelectorAll('.event-card-title');
+        titles.forEach(title => {
+            // Start from the declared size and shrink as needed
+            const computed = window.getComputedStyle(title);
+            let fontSize = parseFloat(computed.fontSize) || 14;
+            const minFontSize = 10;
+            const maxHeight = title.clientHeight || 32;
+
+            // Guard for empty or hidden elements
+            if (maxHeight === 0) return;
+
+            while (title.scrollHeight > maxHeight && fontSize > minFontSize) {
+                fontSize -= 1;
+                title.style.fontSize = fontSize + 'px';
+            }
+        });
+    }
+
+    revokeAllImageObjectUrls() {
+        for (const url of this.imageObjectUrls.values()) {
+            try { URL.revokeObjectURL(url); } catch (_) { /* no-op */ }
+        }
+        this.imageObjectUrls.clear();
+    }
+
+    hydrateEventImages(events) {
+        if (!Array.isArray(events)) return;
+        events.forEach(event => {
+            if (!event || !event.id) return;
+            const el = document.querySelector(`.event-image[data-event-id="${event.id}"]`);
+            if (!el) return;
+
+            // Prefer direct URLs if present
+            if (event.imageUrl && typeof event.imageUrl === 'string') {
+                el.style.backgroundImage = `url(${event.imageUrl})`;
+                el.style.backgroundSize = 'cover';
+                el.style.backgroundPosition = 'center';
+                return;
+            }
+
+            // Next, check if "image" looks like a URL
+            if (event.image && typeof event.image === 'string' && event.image.startsWith('http')) {
+                el.style.backgroundImage = `url(${event.image})`;
+                el.style.backgroundSize = 'cover';
+                el.style.backgroundPosition = 'center';
+                return;
+            }
+
+            // Finally, attempt base64 -> blob URL
+            if (!event.imageBase64) return;
+            this.convertBase64ToPngObjectUrl(event.imageBase64)
+            .then(objectUrl => {
+                if (!objectUrl) return;
+                this.imageObjectUrls.set(event.id, objectUrl);
+                el.style.backgroundImage = `url(${objectUrl})`;
+                el.style.backgroundSize = 'cover';
+                el.style.backgroundPosition = 'center';
+            })
+            .catch(() => { /* ignore */ });
+        });
+    }
+
+    convertBase64ToPngObjectUrl(input) {
+        return new Promise((resolve) => {
+            if (typeof input !== 'string' || !input) {
+                resolve(null);
+                return;
+            }
+            const img = new Image();
+            // CORS safe for data URLs and same-origin
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        resolve(null);
+                        return;
+                    }
+                    ctx.drawImage(img, 0, 0);
+                    canvas.toBlob((blob) => {
+                        if (!blob) { resolve(null); return; }
+                        const url = URL.createObjectURL(blob);
+                        resolve(url);
+                    }, 'image/png');
+                } catch (_) {
+                    resolve(null);
+                }
+            };
+            img.onerror = () => resolve(null);
+            // If not a data URL, assume it's raw base64 and prefix as PNG data URL
+            const src = input.startsWith('data:') ? input : `data:image/png;base64,${input}`;
+            img.src = src;
+        });
     }
 
     getEventStatus(event) {
@@ -245,6 +383,163 @@ class EventManager {
 
     async editEvent(eventId) {
         this.showAddEventForm(eventId);
+    }
+
+    openEditEventPopup(eventData) {
+        const renderFromContainer = (formContainer) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', (ev) => {
+                if (ev.target === overlay) {
+                    document.body.removeChild(overlay);
+                    document.body.style.overflow = '';
+                }
+            });
+
+            overlay.appendChild(formContainer);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            const backBtn = formContainer.querySelector('.back-btn');
+            const clearBtn = formContainer.querySelector('.clear-btn');
+            const confirmBtn = formContainer.querySelector('.confirm-btn');
+
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    if (overlay.parentNode) {
+                        document.body.removeChild(overlay);
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    const inputs = formContainer.querySelectorAll('input, textarea, select');
+                    inputs.forEach((el) => {
+                        if (el.tagName.toLowerCase() === 'select') {
+                            el.selectedIndex = 0;
+                        } else {
+                            el.value = '';
+                        }
+                    });
+                });
+            }
+
+            // Prefill fields from eventData
+            const nameEl = formContainer.querySelector('#event-name');
+            const dateEl = formContainer.querySelector('#event-date');
+            const locationEl = formContainer.querySelector('#event-location');
+            const regTimeEl = formContainer.querySelector('#registration-time');
+            const tourTimeEl = formContainer.querySelector('#tournament-time');
+            const descEl = formContainer.querySelector('#event-description');
+
+            if (nameEl) nameEl.value = eventData.eventName || '';
+            if (dateEl) dateEl.value = eventData.eventDate || '';
+            if (locationEl) locationEl.value = eventData.location || '';
+            if (regTimeEl) regTimeEl.value = eventData.registrationTime || '';
+            if (tourTimeEl) tourTimeEl.value = eventData.tournamentTime || eventData.eventTime || '';
+            if (descEl) descEl.value = eventData.description || '';
+
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', async () => {
+                    try {
+                        const updated = {
+                            eventName: nameEl ? nameEl.value.trim() : eventData.eventName,
+                            eventDate: dateEl ? dateEl.value : eventData.eventDate,
+                            location: locationEl ? locationEl.value.trim() : eventData.location,
+                            registrationTime: regTimeEl ? regTimeEl.value : eventData.registrationTime,
+                            tournamentTime: tourTimeEl ? tourTimeEl.value : (eventData.tournamentTime || eventData.eventTime),
+                            description: descEl ? descEl.value.trim() : eventData.description,
+                            imageBase64: formContainer.dataset.imageBase64 !== undefined ? (formContainer.dataset.imageBase64 || null) : (eventData.imageBase64 || null),
+                            image: formContainer.dataset.imageBase64 !== undefined ? (formContainer.dataset.imageBase64 || null) : (eventData.image || null),
+                            lastUpdated: new Date().toISOString()
+                        };
+
+                        await window.firebaseDatabase.update(
+                            window.firebaseDatabase.ref(window.database, 'TBL_EVENTS/' + eventData.id),
+                            updated
+                        );
+
+                        this.showNotification('Event updated successfully', 'success');
+                        if (overlay.parentNode) {
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
+                        }
+                        this.loadEvents();
+                    } catch (err) {
+                        console.error('Error updating event:', err);
+                        this.showNotification('Error updating event. Please try again.', 'error');
+                    }
+                });
+            }
+        };
+
+        fetch('edit-event-popup.html', { cache: 'no-cache' })
+            .then(response => response.text())
+            .then(html => {
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const formContainer = temp.querySelector('.form-container');
+                if (formContainer) {
+                    // Wire image base64 input & preview
+                    const fileInput = formContainer.querySelector('#event-image');
+                    const preview = formContainer.querySelector('.upload-area');
+                    if (fileInput && preview) {
+                        fileInput.addEventListener('change', () => {
+                            const file = fileInput.files && fileInput.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const dataUrl = e.target && e.target.result ? String(e.target.result) : '';
+                                formContainer.dataset.imageBase64 = dataUrl;
+                                preview.style.backgroundImage = dataUrl ? `url(${dataUrl})` : '';
+                                preview.style.backgroundSize = 'cover';
+                                preview.style.backgroundPosition = 'center';
+                                preview.style.borderStyle = 'solid';
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                    renderFromContainer(formContainer);
+                    return;
+                }
+                throw new Error('No form in fetched HTML');
+            })
+            .catch(() => {
+                // Fallback to inline template
+                const tpl = document.getElementById('edit-event-popup-template');
+                if (!tpl) {
+                    this.showNotification('Unable to open edit popup', 'error');
+                    return;
+                }
+                const clone = tpl.content.cloneNode(true);
+                const formContainer = clone.querySelector('.form-container');
+                if (!formContainer) {
+                    this.showNotification('Unable to open edit popup', 'error');
+                    return;
+                }
+                // Wire image base64 input & preview in fallback
+                const fileInput = formContainer.querySelector('#event-image');
+                const preview = formContainer.querySelector('.upload-area');
+                if (fileInput && preview) {
+                    fileInput.addEventListener('change', () => {
+                        const file = fileInput.files && fileInput.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const dataUrl = e.target && e.target.result ? String(e.target.result) : '';
+                            formContainer.dataset.imageBase64 = dataUrl;
+                            preview.style.backgroundImage = dataUrl ? `url(${dataUrl})` : '';
+                            preview.style.backgroundSize = 'cover';
+                            preview.style.backgroundPosition = 'center';
+                            preview.style.borderStyle = 'solid';
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+                renderFromContainer(formContainer);
+            });
     }
 
     async deleteEvent(eventId) {
