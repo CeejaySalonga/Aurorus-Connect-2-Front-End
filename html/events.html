@@ -66,6 +66,62 @@
             </div>
         </div>
     </template>
+    <!-- Hidden template fallback for edit event popup (for file:// usage) -->
+    <template id="edit-event-popup-template">
+        <div class="form-container">
+            <div class="form-header">
+                <h2><i class="fas fa-pen"></i> Edit Event</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="event-name">Event Name</label>
+                        <input type="text" id="event-name" placeholder="Enter event name...">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-date">Date and Time</label>
+                        <input type="datetime-local" id="event-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-location">Location</label>
+                        <input type="text" id="event-location" placeholder="Enter event location...">
+                    </div>
+                    <div class="form-group">
+                        <label for="registration-time">Registration Time</label>
+                        <input type="time" id="registration-time">
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="tournament-time">Tournament Time</label>
+                        <input type="time" id="tournament-time">
+                    </div>
+                    <div class="form-group">
+                        <label>Event Image</label>
+                        <div class="upload-area">
+                            <input type="file" id="event-image" accept="image/*" style="display: none;">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span onclick="document.getElementById('event-image').click()">Upload Image</span>
+                            <p>Click to select an image file</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="event-description">Description</label>
+                    <textarea id="event-description" placeholder="Enter event description..." rows="6"></textarea>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+                <div class="action-buttons">
+                    <button class="clear-btn"><i class="fas fa-eraser"></i> Clear</button>
+                    <button class="confirm-btn"><i class="fas fa-check"></i> Update Event</button>
+                </div>
+            </div>
+        </div>
+    </template>
     <div class="container">
         <!-- Left Sidebar Container -->
         <div class="sidebar-container">
