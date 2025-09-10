@@ -111,16 +111,11 @@ class EventManager {
             
             return `
                 <div class="event-card">
-                    <div class="event-image" data-event-id="${event.id}">
-                        <div class="event-image-overlay">
-                            <div class="event-banner-text">${event.eventName || 'EVENT'}</div>
-                            <div class="event-banner-subtitle">${event.location || 'LOCATION'}</div>
-                            <div class="event-prize-text">DATE:</div>
-                            <div class="event-prize-value">${eventDate ? eventDate.toLocaleDateString() : 'TBD'}</div>
-                        </div>
-                    </div>
+                    <div class="event-image" data-event-id="${event.id}"></div>
                     <div class="event-card-content">
                         <h3 class="event-card-title">${event.eventName || 'Unnamed Event'}</h3>
+                        <div class="event-card-subtitle">${event.location || 'Location TBD'}</div>
+                        <div class="event-card-date"><span class="event-card-date-label">Date:</span> ${eventDate ? eventDate.toLocaleDateString() : 'TBD'}</div>
                         <button class="edit-event-btn"><i class="fas fa-edit"></i></button>
                     </div>
                 </div>

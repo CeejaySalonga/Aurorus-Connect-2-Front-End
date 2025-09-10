@@ -127,7 +127,7 @@ class CreditManager {
         }
 
         const rows = await Promise.all(
-            this.creditHistory.slice(0, 50).map(async (transaction) => {
+            this.creditHistory.map(async (transaction) => {
                 // Try to get credits by username first, then fallback to userId
                 let userCredits = 0;
                 if (transaction.userName) {
@@ -156,6 +156,11 @@ class CreditManager {
         );
 
         tbody.innerHTML = rows.join('');
+
+        // Re-init pagination for dynamically updated table
+        if (window.initTablePagination) {
+            window.initTablePagination('.transactions-table-container');
+        }
     }
 
     showAddCreditsForm() {

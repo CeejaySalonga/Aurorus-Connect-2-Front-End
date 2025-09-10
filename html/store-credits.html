@@ -72,21 +72,41 @@
                 <!-- Middle Section: Transactions Table (Scrollable) -->
                 <div class="store-credits-middle-section">
                     <div class="transactions-table-container">
-                        <table class="transactions-table">
-                            <thead>
-                                <tr>
-                                    <th>Transaction ID</th>
-                                    <th>Username</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Time</th>
-                                    <th>Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Credit transactions will be loaded dynamically -->
-                            </tbody>
-                        </table>
+                        <div class="table-scroll">
+                            <table class="transactions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Transaction ID</th>
+                                        <th>Username</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Time</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Credit transactions will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-pagination" aria-label="Transactions table pagination controls">
+                            <div class="pagination-left">
+                                <label for="pageSizeSelect">Rows per page:</label>
+                                <select id="pageSizeSelect">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                            <div class="pagination-right">
+                                <button id="firstPageBtn" type="button">« First</button>
+                                <button id="prevPageBtn" type="button">‹ Prev</button>
+                                <span id="pageInfo" aria-live="polite"></span>
+                                <button id="nextPageBtn" type="button">Next ›</button>
+                                <button id="lastPageBtn" type="button">Last »</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -272,5 +292,6 @@
     <script src="../javascript/nfc.js"></script>
     <script src="../javascript/archive.js"></script>
     <script src="../javascript/store-credits.js"></script>
+    <script src="../javascript/pagination.js"></script>
 </body>
 </html>

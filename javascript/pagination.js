@@ -12,7 +12,9 @@
 		var start = (page - 1) * pageSize;
 		var end = start + pageSize;
 		rows.forEach(function (row, index) {
-			row.style.display = index >= start && index < end ? "grid" : "none";
+			var isTr = row && row.tagName && row.tagName.toLowerCase() === "tr";
+			var visible = index >= start && index < end;
+			row.style.display = visible ? (isTr ? "" : "grid") : "none";
 		});
 	}
 
@@ -33,8 +35,14 @@
 
 	function initPagination(tableSelector) {
 		var tableBody = select(tableSelector + " .table-body");
+		var isDivTable = true;
+		if (!tableBody) {
+			// Fallback for native tables
+			tableBody = select(tableSelector + " tbody");
+			isDivTable = false;
+		}
 		if (!tableBody) return;
-		var allRows = selectAll(".table-row", tableBody);
+		var allRows = isDivTable ? selectAll(".table-row", tableBody) : selectAll("tr", tableBody);
 		if (!allRows.length) return;
 
 		var pageSizeSelect = select("#pageSizeSelect");
@@ -117,6 +125,20 @@
 		if (select(".products-table")) {
 			initPagination(".products-table");
 		}
+		// Check for transactions table (store credits)
+		if (select(".transactions-table-container")) {
+			// Wrap the native <table> with virtual row divs for pagination logic consistency
+			// Convert <tbody> rows to divs with class .table-row and .table-cell so paginateRows works
+			var tbody = select(".transactions-table tbody");
+			if (tbody) {
+				var rows = selectAll("tr", tbody);
+				rows.forEach(function(tr){
+					// ensure each row is displayed as grid for paginateRows toggle
+					tr.classList.add("table-row");
+				});
+			}
+			initPagination(".transactions-table-container");
+		}
 	}
 
 	if (document.readyState === "loading") {
@@ -124,4 +146,9 @@
 	} else {
 		autoInit();
 	}
+
+	// Expose a public re-initializer for dynamic tables
+	window.initTablePagination = function(selector){
+		initPagination(selector);
+	};
 })();

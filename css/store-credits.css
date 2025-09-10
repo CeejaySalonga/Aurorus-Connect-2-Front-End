@@ -78,12 +78,20 @@
     border-radius: 8px;
     overflow: hidden;
     min-height: 250px;
+    display: flex;
+    flex-direction: column;
 }
 
 .transactions-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
+}
+
+.table-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .transactions-table thead {
@@ -157,6 +165,78 @@
     background-color: #2c6a8f;
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+/* Pagination Controls (match products/check-in tables) */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-top: 2px solid #e9ecef;
+    flex-wrap: wrap;
+}
+
+.table-pagination .pagination-left,
+.table-pagination .pagination-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-pagination label {
+    color: #333;
+    font-size: 14px;
+}
+
+.table-pagination select {
+    padding: 6px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 14px;
+    color: #333;
+}
+
+.table-pagination button {
+    background: #fff;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.table-pagination button:hover:not(:disabled) {
+    background-color: #3482B4;
+    color: #fff;
+    border-color: #3482B4;
+}
+
+.table-pagination button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.table-pagination #pageInfo {
+    font-size: 14px;
+    color: #555;
+    min-width: 140px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .table-pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .table-pagination .pagination-right {
+        justify-content: space-between;
+    }
 }
 
 /* Numpad Modal Styles */
