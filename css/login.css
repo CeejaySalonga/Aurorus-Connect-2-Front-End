@@ -27,7 +27,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #3482B4, #50B4E6);
+    background: #ffffff;
 }
 
 .login-header {
@@ -65,8 +65,16 @@
     margin: 0 0 8px 0;
 }
 
+.login-header .brand-aurorus {
+    color: #2A94B3;
+}
+
+.login-header .brand-connect {
+    color: #23569B;
+}
+
 .login-header p {
-    color: #718096;
+    color: #030303;
     font-size: 16px;
     margin: 0;
 }
