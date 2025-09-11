@@ -55,13 +55,13 @@ class EventManager {
 
             window.firebaseDatabase.onValue(eventsRef, (snapshot) => {
                 this.events = snapshot.val() ? Object.entries(snapshot.val()).map(([id, data]) => {
-                    // Normalize possible image fields coming from DB
-                    const imageBase64 = (data && (
+                    // Normalize image field coming from DB
+                    const image = (data && (
+                        data.image ||
                         data.imageBase64 ||
                         data.eventImageBase64 ||
                         data.bannerImageBase64 ||
-                        data.imageUrlBase64 ||
-                        data.image // may contain base64 or URL
+                        data.imageUrlBase64
                     )) || null;
 
                     const imageUrl = (data && (
@@ -72,7 +72,7 @@ class EventManager {
                     return {
                         id,
                         ...data,
-                        imageBase64,
+                        image,
                         imageUrl
                     };
                 }) : [];
@@ -179,8 +179,8 @@ class EventManager {
             }
 
             // Finally, attempt base64 -> blob URL
-            if (!event.imageBase64) return;
-            this.convertBase64ToPngObjectUrl(event.imageBase64)
+            if (!event.image) return;
+            this.convertBase64ToPngObjectUrl(event.image)
             .then(objectUrl => {
                 if (!objectUrl) return;
                 this.imageObjectUrls.set(event.id, objectUrl);
@@ -446,7 +446,6 @@ class EventManager {
                             registrationTime: regTimeEl ? regTimeEl.value : eventData.registrationTime,
                             tournamentTime: tourTimeEl ? tourTimeEl.value : (eventData.tournamentTime || eventData.eventTime),
                             description: descEl ? descEl.value.trim() : eventData.description,
-                            imageBase64: formContainer.dataset.imageBase64 !== undefined ? (formContainer.dataset.imageBase64 || null) : (eventData.imageBase64 || null),
                             image: formContainer.dataset.imageBase64 !== undefined ? (formContainer.dataset.imageBase64 || null) : (eventData.image || null),
                             lastUpdated: new Date().toISOString()
                         };
