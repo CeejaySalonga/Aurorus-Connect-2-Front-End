@@ -40,6 +40,18 @@ class EventManager {
                 this.showPastEvents();
             });
         }
+
+        // Update status buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.update-status-btn')) {
+                const eventCard = e.target.closest('.event-card');
+                const eventTitle = eventCard.querySelector('.event-card-title').textContent;
+                const event = this.events.find(evt => evt.eventName === eventTitle);
+                if (event) {
+                    this.showStatusUpdateModal(event);
+                }
+            }
+        });
     }
 
     async loadEvents() {
@@ -115,8 +127,14 @@ class EventManager {
                     <div class="event-card-content">
                         <h3 class="event-card-title">${event.eventName || 'Unnamed Event'}</h3>
                         <div class="event-card-subtitle">${event.location || 'Location TBD'}</div>
-                        <div class="event-card-date"><span class="event-card-date-label">Date:</span> ${eventDate ? eventDate.toLocaleDateString() : 'TBD'}</div>
-                        <button class="edit-event-btn"><i class="fas fa-edit"></i></button>
+                         <div class="event-card-date"><span class="event-card-date-label">Date:</span> ${eventDate ? eventDate.toLocaleDateString() : 'TBD'}</div>
+                         <div class="event-card-status">
+                             <span class="status-badge status-${event.status || 'active'}">${(event.status || 'active').charAt(0).toUpperCase() + (event.status || 'active').slice(1)}</span>
+                         </div>
+                         <div class="event-card-actions">
+                             <button class="edit-event-btn" title="Edit Event"><i class="fas fa-edit"></i></button>
+                             <button class="update-status-btn" title="Update Status"><i class="fas fa-sync-alt"></i></button>
+                         </div>
                     </div>
                 </div>
             `;
@@ -686,18 +704,110 @@ class EventManager {
         URL.revokeObjectURL(url);
     }
 
-    showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 3000);
-    }
+     showStatusUpdateModal(event) {
+         const modal = document.createElement('div');
+         modal.className = 'modal';
+         modal.innerHTML = `
+             <div class="modal-content">
+                 <div class="modal-header">
+                     <h3>Update Event Status</h3>
+                 </div>
+                 <div class="modal-body">
+                     <div class="event-info">
+                         <h4>${event.eventName}</h4>
+                         <div class="event-details">
+                             <div class="detail-row">
+                                 <span class="detail-label">Date:</span>
+                                 <span class="detail-value">${event.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'TBD'}</span>
+                             </div>
+                             <div class="detail-row">
+                                 <span class="detail-label">Location:</span>
+                                 <span class="detail-value">${event.location || 'TBD'}</span>
+                             </div>
+                             <div class="detail-row">
+                                 <span class="detail-label">Current Status:</span>
+                                 <span class="status-badge status-${event.status || 'active'}">${(event.status || 'active').charAt(0).toUpperCase() + (event.status || 'active').slice(1)}</span>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="status-selection">
+                         <label for="newStatus">Select New Status</label>
+                         <select id="newStatus" class="status-select">
+                             <option value="active" ${(event.status || 'active') === 'active' ? 'selected' : ''}>Active</option>
+                             <option value="ongoing" ${(event.status || 'active') === 'ongoing' ? 'selected' : ''}>Ongoing</option>
+                             <option value="completed" ${(event.status || 'active') === 'completed' ? 'selected' : ''}>Completed</option>
+                             <option value="inactive" ${(event.status || 'active') === 'inactive' ? 'selected' : ''}>Inactive</option>
+                             <option value="cancelled" ${(event.status || 'active') === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                         </select>
+                     </div>
+                     <div class="modal-actions">
+                         <button type="button" class="btn-primary" id="updateStatusBtn">Update Status</button>
+                         <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                     </div>
+                 </div>
+             </div>
+         `;
+         document.body.appendChild(modal);
+
+         // Handle status update
+         const updateBtn = document.getElementById('updateStatusBtn');
+         const statusSelect = document.getElementById('newStatus');
+         
+         updateBtn.addEventListener('click', async () => {
+             const newStatus = statusSelect.value;
+             if (newStatus === (event.status || 'active')) {
+                 this.showNotification('Status is already set to ' + newStatus, 'info');
+                 modal.remove();
+                 return;
+             }
+
+             try {
+                 await this.updateEventStatus(event.id, newStatus);
+                 this.showNotification(`Event status updated to ${newStatus}`, 'success');
+                 modal.remove();
+             } catch (error) {
+                 console.error('Error updating event status:', error);
+                 this.showNotification('Error updating event status', 'error');
+             }
+         });
+     }
+
+     async updateEventStatus(eventId, newStatus) {
+         try {
+             const eventRef = window.firebaseDatabase.ref(window.database, 'TBL_EVENTS/' + eventId);
+             await window.firebaseDatabase.update(eventRef, {
+                 status: newStatus,
+                 lastUpdated: new Date().toISOString()
+             });
+             
+             // Update local events array
+             const event = this.events.find(e => e.id === eventId);
+             if (event) {
+                 event.status = newStatus;
+                 event.lastUpdated = new Date().toISOString();
+             }
+             
+             // Re-render events to show updated status
+             this.renderEvents();
+             
+         } catch (error) {
+             console.error('Error updating event status:', error);
+             throw error;
+         }
+     }
+
+     showNotification(message, type) {
+         const notification = document.createElement('div');
+         notification.className = `notification ${type}`;
+         notification.textContent = message;
+         document.body.appendChild(notification);
+         
+         setTimeout(() => {
+             if (notification.parentNode) {
+                 notification.remove();
+             }
+         }, 3000);
+     }
 }
 
 // Global event manager instance
