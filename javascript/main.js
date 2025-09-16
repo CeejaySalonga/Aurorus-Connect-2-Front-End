@@ -397,6 +397,9 @@ class DashboardManager {
 
         if (checkIns.length === 0) {
             tableBody.innerHTML = '<div class="table-row"><div class="table-cell" style="grid-column: 1 / -1; text-align: center;">No check-ins today</div></div>';
+            // Ensure pagination info reflects zero rows
+            const pageInfoEl = document.getElementById('pageInfo');
+            if (pageInfoEl) pageInfoEl.textContent = 'Page 1 of 1 (0 rows)';
             return;
         }
 
@@ -408,6 +411,17 @@ class DashboardManager {
                 <div class="table-cell status-active">${checkIn.status}</div>
             </div>
         `).join('');
+
+        // Initialize pagination now that rows exist, so page info shows correctly
+        if (window.initTablePagination) {
+            window.initTablePagination('.user-table');
+        } else {
+            // Fallback: set simple page info text
+            const pageInfoEl = document.getElementById('pageInfo');
+            if (pageInfoEl) {
+                pageInfoEl.textContent = `Page 1 of 1 (${checkIns.length} rows)`;
+            }
+        }
     }
 
     showNotification(message, type) {
