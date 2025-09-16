@@ -11,6 +11,45 @@
     width: 320px;
 }
 
+/* Modernized search input styling for Orders */
+.orders-filters .products-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.orders-filters .products-search:focus-within {
+    border-color: #3482B4;
+    box-shadow: 0 0 0 3px rgba(52,130,180,0.15), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.orders-filters .products-search i {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.orders-filters .products-search input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+    background: transparent;
+}
+
+.orders-filters .products-search input::placeholder {
+    color: #9aa0a6;
+}
+
+@media (max-width: 600px) {
+    .orders-filters .products-search { width: 100%; }
+}
+
 .order-details-modal {
     background: #111216;
     color: #e6e6e6;
@@ -120,6 +159,11 @@
     border-right: none;
 }
 
+/* Center the actions column header */
+.transactions-table th:last-child {
+    text-align: center;
+}
+
 .transactions-table td {
     padding: 12px 15px;
     border-bottom: 1px solid #e9ecef;
@@ -133,6 +177,11 @@
     border-right: none;
 }
 
+/* Center the actions column cells */
+.transactions-table td:last-child {
+    text-align: center;
+}
+
 .transactions-table tbody tr {
     transition: background-color 0.2s ease;
 }
@@ -144,6 +193,35 @@
 .transactions-table tbody tr:last-child td {
     border-bottom: none;
 }
+
+/* Action button styles (match products page) */
+.transactions-table .btn-view,
+.transactions-table .btn-edit {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    width: 34px;
+    height: 34px;
+}
+
+.transactions-table .btn-view i,
+.transactions-table .btn-edit i {
+    pointer-events: none;
+}
+
+.transactions-table .btn-view { color: #6c757d; border-color: #cfd4da; }
+.transactions-table .btn-view:hover { background-color: #6c757d; color: #fff; border-color: #6c757d; }
+.transactions-table .btn-edit { color: #3482B4; border-color: #3482B4; }
+.transactions-table .btn-edit:hover { background-color: #3482B4; color: #fff; border-color: #3482B4; }
 
 /* Pagination controls */
 .table-pagination {
