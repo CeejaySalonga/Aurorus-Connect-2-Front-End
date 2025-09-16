@@ -637,27 +637,56 @@ class EventManager {
             return;
         }
 
-        // Create modal to show past events
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h3>Past Events</h3>
-                <div class="past-events-list">
-                    ${pastEvents.map(event => `
+        fetch('past-events-popup.html', { cache: 'no-cache' })
+            .then(response => response.text())
+            .then(html => {
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const formContainer = temp.querySelector('.form-container');
+                if (!formContainer) {
+                    throw new Error('No form in fetched HTML');
+                }
+
+                // Populate list
+                const list = formContainer.querySelector('.past-events-list');
+                if (list) {
+                    list.innerHTML = pastEvents.map(event => `
                         <div class="past-event-item">
                             <h4>${event.eventName}</h4>
                             <p>Date: ${new Date(event.eventDate).toLocaleDateString()}</p>
                             <p>Location: ${event.location || 'N/A'}</p>
                         </div>
-                    `).join('')}
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+                    `).join('');
+                }
+
+                // Render overlay consistent with other popups
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.addEventListener('click', (ev) => {
+                    if (ev.target === overlay) {
+                        document.body.removeChild(overlay);
+                        document.body.style.overflow = '';
+                    }
+                });
+                overlay.appendChild(formContainer);
+                document.body.appendChild(overlay);
+                document.body.style.overflow = 'hidden';
+
+                // Wire back button
+                const backBtn = formContainer.querySelector('.back-btn');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        if (overlay.parentNode) {
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
+                        }
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error loading past events popup:', err);
+                this.showNotification('Could not open past events', 'error');
+            });
     }
 
     exportEventsData(format = 'csv') {
@@ -705,71 +734,90 @@ class EventManager {
     }
 
      showStatusUpdateModal(event) {
-         const modal = document.createElement('div');
-         modal.className = 'modal';
-         modal.innerHTML = `
-             <div class="modal-content">
-                 <div class="modal-header">
-                     <h3>Update Event Status</h3>
-                 </div>
-                 <div class="modal-body">
-                     <div class="event-info">
-                         <h4>${event.eventName}</h4>
-                         <div class="event-details">
-                             <div class="detail-row">
-                                 <span class="detail-label">Date:</span>
-                                 <span class="detail-value">${event.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'TBD'}</span>
-                             </div>
-                             <div class="detail-row">
-                                 <span class="detail-label">Location:</span>
-                                 <span class="detail-value">${event.location || 'TBD'}</span>
-                             </div>
-                             <div class="detail-row">
-                                 <span class="detail-label">Current Status:</span>
-                                 <span class="status-badge status-${event.status || 'active'}">${(event.status || 'active').charAt(0).toUpperCase() + (event.status || 'active').slice(1)}</span>
-                             </div>
-                         </div>
-                     </div>
-                     <div class="status-selection">
-                         <label for="newStatus">Select New Status</label>
-                         <select id="newStatus" class="status-select">
-                             <option value="active" ${(event.status || 'active') === 'active' ? 'selected' : ''}>Active</option>
-                             <option value="ongoing" ${(event.status || 'active') === 'ongoing' ? 'selected' : ''}>Ongoing</option>
-                             <option value="completed" ${(event.status || 'active') === 'completed' ? 'selected' : ''}>Completed</option>
-                             <option value="inactive" ${(event.status || 'active') === 'inactive' ? 'selected' : ''}>Inactive</option>
-                             <option value="cancelled" ${(event.status || 'active') === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                         </select>
-                     </div>
-                     <div class="modal-actions">
-                         <button type="button" class="btn-primary" id="updateStatusBtn">Update Status</button>
-                         <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
-                     </div>
-                 </div>
-             </div>
-         `;
-         document.body.appendChild(modal);
+         fetch('update-status-popup.html', { cache: 'no-cache' })
+            .then(response => response.text())
+            .then(html => {
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const formContainer = temp.querySelector('.form-container');
+                if (!formContainer) {
+                    throw new Error('No form in fetched HTML');
+                }
 
-         // Handle status update
-         const updateBtn = document.getElementById('updateStatusBtn');
-         const statusSelect = document.getElementById('newStatus');
-         
-         updateBtn.addEventListener('click', async () => {
-             const newStatus = statusSelect.value;
-             if (newStatus === (event.status || 'active')) {
-                 this.showNotification('Status is already set to ' + newStatus, 'info');
-                 modal.remove();
-                 return;
-             }
+                // Populate event info
+                const nameEl = formContainer.querySelector('.event-name');
+                const dateEl = formContainer.querySelector('.event-date');
+                const locationEl = formContainer.querySelector('.event-location');
+                const currentStatusEl = formContainer.querySelector('.current-status');
+                const statusSelect = formContainer.querySelector('#newStatus');
 
-             try {
-                 await this.updateEventStatus(event.id, newStatus);
-                 this.showNotification(`Event status updated to ${newStatus}`, 'success');
-                 modal.remove();
-             } catch (error) {
-                 console.error('Error updating event status:', error);
-                 this.showNotification('Error updating event status', 'error');
-             }
-         });
+                if (nameEl) nameEl.textContent = event.eventName || '';
+                if (dateEl) dateEl.textContent = event.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'TBD';
+                if (locationEl) locationEl.textContent = event.location || 'TBD';
+                if (currentStatusEl) {
+                    const statusText = (event.status || 'active');
+                    currentStatusEl.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+                    currentStatusEl.className = `status-badge current-status status-${statusText}`;
+                }
+                if (statusSelect) {
+                    statusSelect.value = (event.status || 'active');
+                }
+
+                // Render overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.addEventListener('click', (ev) => {
+                    if (ev.target === overlay) {
+                        document.body.removeChild(overlay);
+                        document.body.style.overflow = '';
+                    }
+                });
+                overlay.appendChild(formContainer);
+                document.body.appendChild(overlay);
+                document.body.style.overflow = 'hidden';
+
+                // Wire back button
+                const backBtn = formContainer.querySelector('.back-btn');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        if (overlay.parentNode) {
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
+                        }
+                    });
+                }
+
+                // Wire confirm button
+                const confirmBtn = formContainer.querySelector('.confirm-btn');
+                if (confirmBtn && statusSelect) {
+                    confirmBtn.addEventListener('click', async () => {
+                        const newStatus = statusSelect.value;
+                        if (newStatus === (event.status || 'active')) {
+                            this.showNotification('Status is already set to ' + newStatus, 'info');
+                            if (overlay.parentNode) {
+                                document.body.removeChild(overlay);
+                                document.body.style.overflow = '';
+                            }
+                            return;
+                        }
+                        try {
+                            await this.updateEventStatus(event.id, newStatus);
+                            this.showNotification(`Event status updated to ${newStatus}`, 'success');
+                            if (overlay.parentNode) {
+                                document.body.removeChild(overlay);
+                                document.body.style.overflow = '';
+                            }
+                        } catch (error) {
+                            console.error('Error updating event status:', error);
+                            this.showNotification('Error updating event status', 'error');
+                        }
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error loading update status popup:', err);
+                this.showNotification('Could not open status update', 'error');
+            });
      }
 
      async updateEventStatus(eventId, newStatus) {
