@@ -75,27 +75,85 @@ class ArchiveManager {
             const archivedProductsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_ARCHIVED_PRODUCTS'));
             const archivedProductsData = archivedProductsSnapshot.val() || {};
 
-            this.archivedData = [];
+            // Normalize archived products and sort by date desc
+            this.archivedProducts = Object.entries(archivedProductsData).map(([productId, product]) => ({
+                id: productId,
+                name: product.productName || 'Unnamed Product',
+                price: product.price,
+                archivedAt: product.archivedAt || product.createdAt || product.lastUpdated || '',
+                raw: product
+            })).sort((a, b) => new Date(b.archivedAt || 0) - new Date(a.archivedAt || 0));
 
-            // Process only archived products
-            Object.entries(archivedProductsData).forEach(([productId, product]) => {
-                this.archivedData.push({
-                    type: 'Archived Product',
-                    description: `${product.productName} - $${product.price}`,
-                    date: product.archivedAt || product.createdAt || product.lastUpdated,
-                    status: 'Archived',
-                    productId: productId,
-                    data: product
-                });
-            });
-
-            // Sort by date (newest first)
-            this.archivedData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Render table and update stats
+            this.renderArchivedProductsTable();
+            this.updateArchivedStats();
 
         } catch (error) {
             console.error('Error loading archive data:', error);
             this.showNotification('Error loading archive data', 'error');
         }
+    }
+
+    renderArchivedProductsTable() {
+        const tbody = document.getElementById('archivesTableBody');
+        if (!tbody) return;
+        // Clear existing rows
+        tbody.innerHTML = '';
+
+        // Populate from archived products
+        (this.archivedProducts || []).forEach(item => {
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            const dateTd = document.createElement('td');
+            const actionsTd = document.createElement('td');
+
+            nameTd.textContent = item.name;
+            dateTd.textContent = item.archivedAt ? new Date(item.archivedAt).toISOString().split('T')[0] : '';
+
+            const actions = document.createElement('div');
+            actions.className = 'archives-actions';
+            const viewBtn = document.createElement('button');
+            viewBtn.className = 'btn-view';
+            viewBtn.title = 'Preview';
+            viewBtn.setAttribute('aria-label', 'Preview archived product');
+            viewBtn.innerHTML = '<i class="fas fa-eye" aria-hidden="true"></i>';
+            viewBtn.addEventListener('click', () => this.previewArchivedProduct(item));
+            actions.appendChild(viewBtn);
+            actionsTd.appendChild(actions);
+
+            tr.appendChild(nameTd);
+            tr.appendChild(dateTd);
+            tr.appendChild(actionsTd);
+            tbody.appendChild(tr);
+        });
+
+        // Re-init pagination for the updated table
+        if (window.initTablePagination) {
+            window.initTablePagination('.transactions-table-container');
+        }
+
+        // Refresh page info text for products tab
+        this.updatePageInfo('#archivesTableBody', '#pageInfo');
+    }
+
+    updateArchivedStats() {
+        const totalEl = document.getElementById('archivedItems');
+        const last7El = document.getElementById('archivedLast7');
+        const items = this.archivedProducts || [];
+        if (totalEl) totalEl.textContent = String(items.length);
+        if (last7El) {
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const count = items.filter(i => i.archivedAt && new Date(i.archivedAt) >= sevenDaysAgo).length;
+            last7El.textContent = String(count);
+        }
+    }
+
+    previewArchivedProduct(item) {
+        // Minimal preview using alert; can be replaced with a modal if needed
+        const name = item.name || 'Unnamed Product';
+        const date = item.archivedAt || 'Unknown date';
+        this.showNotification(`Archived Product: ${name} (Archived: ${date})`, 'success');
     }
 
     initSearch() {
