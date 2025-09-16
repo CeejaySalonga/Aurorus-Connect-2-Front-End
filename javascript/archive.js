@@ -176,51 +176,81 @@ class ArchiveManager {
     }
 
     showExportOptions() {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h3>Export Data</h3>
-                <p>Choose what data you want to export:</p>
-                
-                <div class="export-options">
-                    <div class="export-option">
-                        <h4>📊 Dashboard Data</h4>
-                        <p>Export check-ins, credits, and statistics</p>
-                        <button class="btn-primary" onclick="archiveManager.exportDashboardData()">Export Dashboard</button>
-                    </div>
-                    
-                    <div class="export-option">
-                        <h4>📅 Events Data</h4>
-                        <p>Export all events and registrations</p>
-                        <button class="btn-primary" onclick="archiveManager.exportEventsData()">Export Events</button>
-                    </div>
-                    
-                    <div class="export-option">
-                        <h4>📦 Products Data</h4>
-                        <p>Export products and inventory</p>
-                        <button class="btn-primary" onclick="archiveManager.exportProductsData()">Export Products</button>
-                    </div>
-                    
-                    <div class="export-option">
-                        <h4>💰 Credits Data</h4>
-                        <p>Export credit transactions and balances</p>
-                        <button class="btn-primary" onclick="archiveManager.exportCreditsData()">Export Credits</button>
-                    </div>
-                    
-                    <div class="export-option">
-                        <h4>🗄️ Archived Data</h4>
-                        <p>Export archived products and records</p>
-                        <button class="btn-primary" onclick="archiveManager.exportArchivedData()">Export Archived</button>
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+        fetch('export-popup.html', { cache: 'no-cache' })
+            .then(res => res.text())
+            .then(html => {
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const formContainer = temp.querySelector('.form-container');
+                if (!formContainer) return;
+
+                // Ensure popup styles are present (for pages that don't include create-popup.css)
+                const hasPopupCss = document.querySelector('link[href$="/create-popup.css"], link[href$="create-popup.css"]');
+                if (!hasPopupCss) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = '../css/create-popup.css';
+                    document.head.appendChild(link);
+                }
+
+                // Inject any inline styles from the fetched HTML (so custom export layout applies)
+                const injectedStyleEls = [];
+                temp.querySelectorAll('style').forEach((styleTag) => {
+                    const styleEl = document.createElement('style');
+                    styleEl.setAttribute('data-export-popup-style', '');
+                    styleEl.textContent = styleTag.textContent || '';
+                    document.head.appendChild(styleEl);
+                    injectedStyleEls.push(styleEl);
+                });
+
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.addEventListener('click', (evt) => {
+                    if (evt.target === overlay) {
+                        document.body.removeChild(overlay);
+                        document.body.style.overflow = '';
+                        // Clean up injected styles
+                        injectedStyleEls.forEach(el => el.parentNode && el.parentNode.removeChild(el));
+                    }
+                });
+
+                // Wire close button
+                const backBtn = formContainer.querySelector('.back-btn');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        if (overlay.parentNode) {
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
+                            // Clean up injected styles
+                            injectedStyleEls.forEach(el => el.parentNode && el.parentNode.removeChild(el));
+                        }
+                    });
+                }
+
+                // Wire export buttons
+                formContainer.querySelectorAll('[data-export]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const type = btn.getAttribute('data-export');
+                        if (type === 'dashboard') this.exportDashboardData();
+                        else if (type === 'events') this.exportEventsData();
+                        else if (type === 'products') this.exportProductsData();
+                        else if (type === 'credits') this.exportCreditsData();
+                        else if (type === 'archived') this.exportArchivedData();
+                        else if (type === 'all') {
+                            // Trigger all exports; stagger slightly to avoid blocking UI
+                            setTimeout(() => this.exportDashboardData(), 0);
+                            setTimeout(() => this.exportEventsData(), 50);
+                            setTimeout(() => this.exportProductsData(), 100);
+                            setTimeout(() => this.exportCreditsData(), 150);
+                            setTimeout(() => this.exportArchivedData(), 200);
+                        }
+                    });
+                });
+
+                overlay.appendChild(formContainer);
+                document.body.appendChild(overlay);
+                document.body.style.overflow = 'hidden';
+            });
     }
 
     async exportDashboardData() {

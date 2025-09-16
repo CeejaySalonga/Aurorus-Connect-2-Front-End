@@ -1,15 +1,19 @@
 .orders-top-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: block;
     padding-bottom: 15px;
     border-bottom: 2px solid #e9ecef;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
-.orders-filters .products-search {
-    width: 320px;
+/* Position search like products page (right-aligned row under title) */
+.orders-filters {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 20px;
 }
+
+.orders-filters .products-search { width: 320px; }
 
 /* Modernized search input styling for Orders */
 .orders-filters .products-search {
