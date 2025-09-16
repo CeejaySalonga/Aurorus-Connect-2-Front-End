@@ -263,7 +263,7 @@ class CreditManager {
         
         // Create numpad content inline (to avoid CORS issues with file:// protocol)
         const content = document.createElement('div');
-        content.className = 'form-container';
+        content.className = 'form-container numpad-compact';
         content.innerHTML = `
                 <!-- Header Section -->
                 <div class="form-header">
