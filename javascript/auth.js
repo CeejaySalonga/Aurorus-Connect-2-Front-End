@@ -165,4 +165,22 @@ document.addEventListener('DOMContentLoaded', () => {
             window.authManager.logout();
         });
     }
+
+    // Update the right sidebar date to today's date
+    try {
+        const dateElements = document.querySelectorAll('.dashboard .date');
+        if (dateElements && dateElements.length > 0) {
+            const now = new Date();
+            const formatted = now.toLocaleDateString(undefined, {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+            });
+            dateElements.forEach(el => {
+                el.textContent = formatted;
+            });
+        }
+    } catch (err) {
+        console.error('Error setting sidebar date:', err);
+    }
 });
