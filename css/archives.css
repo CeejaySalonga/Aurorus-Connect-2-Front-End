@@ -22,16 +22,29 @@
     padding: 12px 25px;
     border-radius: 8px;
     cursor: pointer;
-    font-weight: 700;
-    font-size: 14px;
+    font-weight: bold;
+    font-size: 16px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     min-height: 44px;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    transition: all 0.3s ease;
 }
-.archives-tabs .tab-btn:hover { background-color: #f8f9fa; }
-.archives-tabs .tab-btn.active { background: #3482B4; color: #fff; border-color: #3482B4; }
+.archives-tabs .tab-btn:hover { 
+    background-color: #f8f9fa; 
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+.archives-tabs .tab-btn.active { 
+    background: #3482B4; 
+    color: #fff; 
+    border-color: #3482B4; 
+}
+.archives-tabs .tab-btn.active:hover {
+    background-color: #2c6a8f;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(52, 130, 180, 0.3);
+}
 .tab-pane { display: none; }
 .tab-pane.active { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 

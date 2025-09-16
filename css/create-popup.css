@@ -246,8 +246,8 @@
 
 .form-container {
     max-height: none;
-    overflow: visible;
-    border-radius: 12px;
+    overflow: hidden;
+    border-radius: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #333;
     line-height: 1.6;
