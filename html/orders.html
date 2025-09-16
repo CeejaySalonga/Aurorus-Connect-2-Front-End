@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurorus Connect - Product Management</title>
+    <title>Aurorus Connect - Orders</title>
     <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="../css/products.css">
-    <link rel="stylesheet" href="../css/create-popup.css">
+    <link rel="stylesheet" href="../css/orders.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    
     <div class="container">
         <!-- Left Sidebar Container -->
         <div class="sidebar-container">
@@ -26,15 +24,15 @@
                         <i class="fas fa-user-check"></i>
                         <span class="nav-label">Check in</span>
                     </a>
-                    <a href="orders.html" class="nav-item">
+                    <div class="nav-item active">
                         <i class="fas fa-receipt"></i>
                         <span class="nav-label">Orders</span>
-                    </a>
+                    </div>
                     <a href="store-credits.html" class="nav-item">
                         <i class="fas fa-dollar-sign"></i>
                         <span class="nav-label">Store Credits</span>
                     </a>
-                    <a href="products.html" class="nav-item active">
+                    <a href="products.html" class="nav-item">
                         <i class="fas fa-box"></i>
                         <span class="nav-label">Products</span>
                     </a>
@@ -62,66 +60,37 @@
         <div class="main-container">
             <div class="main-content">
                 <!-- Top Section: Header -->
-                <div class="products-top-section">
-                    <h1 class="page-title">Product Management</h1>
-                </div>
-                
-                <!-- Create Product Button Section -->
-                <div class="create-product-section">
-                    <button class="create-product-btn">
-                        <i class="fas fa-plus"></i>
-                        Create Product
-                    </button>
-                </div>
-
-                <!-- Filters Row: Category & Variant on left, Search on right -->
-                <div class="filters-row">
-                    <div class="filters-left">
-                        <div class="category-dropdowns">
-                            <div class="dropdown-container">
-                                <button class="category-dropdown-btn" onclick="toggleDropdown('category')">
-                                    <span>Category</span>
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
-                                <div class="dropdown-content" id="category-dropdown">
-                                    <!-- populated by JS -->
-                                </div>
-                            </div>
-                            <div class="dropdown-container">
-                                <button class="category-dropdown-btn" onclick="toggleDropdown('variant')">
-                                    <span>Variant</span>
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
-                                <div class="dropdown-content" id="variant-dropdown">
-                                    <!-- populated by JS -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="filters-right">
+                <div class="orders-top-section">
+                    <h1 class="page-title">Orders</h1>
+                    <div class="orders-filters">
                         <div class="products-search">
                             <i class="fas fa-search" aria-hidden="true"></i>
-                            <input id="productsSearch" type="text" placeholder="Search products..." aria-label="Search products">
+                            <input id="ordersSearch" type="text" placeholder="Search by customer or order ID" aria-label="Search orders">
                         </div>
                     </div>
                 </div>
 
-                
-                <!-- Middle Section: Products Table -->
-                <div class="products-middle-section">
-                    <div class="products-table">
-                        <div class="table-header">
-                            <div class="header-cell">SKU</div>
-                            <div class="header-cell">Name</div>
-                            <div class="header-cell">Stock</div>
-                            <div class="header-cell">Category</div>
-                            <div class="header-cell">Variant</div>
-                            <div class="header-cell">Actions</div>
+                <!-- Middle Section: Orders Table (Scrollable) -->
+                <div class="orders-middle-section">
+                    <div class="transactions-table-container">
+                        <div class="table-scroll">
+                            <table class="transactions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody">
+                                    <!-- Orders will be loaded dynamically -->
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="table-body" id="productsTableBody">
-                            <!-- Products will be loaded dynamically -->
-                        </div>
-                        <div class="table-pagination" aria-label="Products table pagination controls">
+                        <div class="table-pagination" aria-label="Orders table pagination controls">
                             <div class="pagination-left">
                                 <label for="pageSizeSelect">Rows per page:</label>
                                 <select id="pageSizeSelect">
@@ -147,40 +116,32 @@
         <!-- Right Dashboard Container -->
         <div class="dashboard-container">
             <div class="dashboard">
-                <h2 class="dashboard-title">Aurorus Connect</h2>
+                <h2 class="dashboard-title">Orders Summary</h2>
                 <p class="date">Monday, August 11</p>
                 
                 <div class="stats-section">
                     <div class="stat-item">
-                        <div class="stat-label">TOTAL PRODUCTS</div>
-                        <div class="stat-value" id="totalProducts">0</div>
+                        <div class="stat-label">ORDERS TODAY</div>
+                        <div class="stat-value" id="ordersToday">0</div>
                     </div>
                     
                     <div class="stat-item">
-                        <div class="stat-label">LOW STOCK</div>
-                        <div class="stat-value" id="lowStock">0</div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-label">CATEGORIES</div>
-                        <div class="stat-value" id="totalCategories">0</div>
+                        <div class="stat-label">REVENUE TODAY</div>
+                        <div class="stat-value" id="revenueToday">$0</div>
                     </div>
                 </div>
-                
             </div>
         </div>
     </div>
     
     <!-- Firebase SDK v9+ Modular -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
         import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBkFXrNVMoqgsI0BVOBaiZP0fgoLTp6bJ8",
             authDomain: "db-aurorus.firebaseapp.com",
@@ -192,14 +153,12 @@
             measurementId: "G-VTBEQJ46YZ"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const database = getDatabase(app);
         const storage = getStorage(app);
 
-        // Create compatibility layer for existing code
         window.firebase = {
             auth: () => auth,
             database: () => database,
@@ -207,37 +166,15 @@
             initializeApp: () => app
         };
 
-        // Export individual services
         window.auth = auth;
         window.database = database;
         window.storage = storage;
         window.analytics = analytics;
 
-        // Export Firebase functions for compatibility
-        window.firebaseAuth = {
-            signInWithEmailAndPassword,
-            signOut,
-            onAuthStateChanged
-        };
+        window.firebaseAuth = { signInWithEmailAndPassword, signOut, onAuthStateChanged };
+        window.firebaseDatabase = { ref, set, get, push, update, remove, onValue, off };
+        window.firebaseStorage = { ref: storageRef, uploadBytes, getDownloadURL };
 
-        window.firebaseDatabase = {
-            ref,
-            set,
-            get,
-            push,
-            update,
-            remove,
-            onValue,
-            off
-        };
-
-        window.firebaseStorage = {
-            ref: storageRef,
-            uploadBytes,
-            getDownloadURL
-        };
-
-        // Signal that Firebase is ready
         window.firebaseReady = true;
         window.dispatchEvent(new CustomEvent('firebaseReady'));
     </script>
@@ -245,8 +182,8 @@
     <!-- App Scripts -->
     <script src="../javascript/auth.js"></script>
     <script src="../javascript/archive.js"></script>
-    <script src="../javascript/products.js"></script>
-    <script src="../javascript/create-popup.js"></script>
     <script src="../javascript/pagination.js"></script>
+    <script src="../javascript/orders.js"></script>
 </body>
 </html>
+

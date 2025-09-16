@@ -1,0 +1,227 @@
+.orders-top-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 15px;
+}
+
+.orders-filters .products-search {
+    width: 320px;
+}
+
+.order-details-modal {
+    background: #111216;
+    color: #e6e6e6;
+    border: 1px solid #2a2d35;
+    border-radius: 8px;
+    width: 680px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.order-details-modal .details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #2a2d35;
+}
+
+.order-details-modal .btn-close {
+    background: transparent;
+    color: #e6e6e6;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.order-details-modal .details-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+.order-details-modal .details-items {
+    padding: 8px 20px 20px 20px;
+}
+
+.order-details-modal .detail-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 120px;
+    padding: 10px 0;
+    border-bottom: 1px solid #2a2d35;
+}
+
+.order-details-modal .detail-row.header {
+    font-weight: 600;
+    color: #c7c7c7;
+}
+
+.order-details-modal .detail-cell { 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
+
+/* Match table layout with other pages */
+.orders-middle-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: calc(100vh - 400px);
+    padding-bottom: 20px;
+}
+
+.transactions-table-container {
+    flex: 1;
+    background-color: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.table-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.transactions-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.transactions-table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: bold;
+    color: #333;
+    border-right: 1px solid #e9ecef;
+    font-size: 14px;
+}
+
+.transactions-table th:last-child {
+    border-right: none;
+}
+
+.transactions-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    color: #333;
+    text-align: left;
+    border-right: 1px solid #e9ecef;
+}
+
+.transactions-table td:last-child {
+    border-right: none;
+}
+
+.transactions-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.transactions-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.transactions-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Pagination controls */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-top: 2px solid #e9ecef;
+    flex-wrap: wrap;
+}
+
+.table-pagination .pagination-left,
+.table-pagination .pagination-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-pagination label {
+    color: #333;
+    font-size: 14px;
+}
+
+.table-pagination select {
+    padding: 6px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 14px;
+    color: #333;
+}
+
+.table-pagination button {
+    background: #fff;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.table-pagination button:hover:not(:disabled) {
+    background-color: #3482B4;
+    color: #fff;
+    border-color: #3482B4;
+}
+
+.table-pagination button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.table-pagination #pageInfo {
+    font-size: 14px;
+    color: #555;
+    min-width: 140px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .transactions-table {
+        font-size: 12px;
+    }
+    .transactions-table th,
+    .transactions-table td {
+        padding: 10px 8px;
+    }
+    .table-pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .table-pagination .pagination-right {
+        justify-content: space-between;
+    }
+}
+
+
