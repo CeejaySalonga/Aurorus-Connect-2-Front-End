@@ -41,28 +41,77 @@ class OrdersManager {
             const snapshot = await window.firebaseDatabase.get(
                 window.firebaseDatabase.ref(window.database, 'TBL_ORDERS')
             );
-            const data = snapshot.val() || {};
+            const root = snapshot.val() || {};
 
-            // Normalize to array
-            const orders = [];
-            Object.entries(data).forEach(([orderId, order]) => {
-                const items = Array.isArray(order.items)
-                    ? order.items
-                    : (order.items ? Object.values(order.items) : []);
-                const total = parseFloat(order.total || 0);
-                orders.push({
-                    orderId,
-                    customer: order.userName || order.userId || 'Unknown',
-                    items,
-                    total,
-                    timestamp: order.timestamp || order.createdAt || new Date().toISOString()
+            // Support nested structure: TBL_ORDERS/{userKey}/{orderId} -> order
+            const aggregated = [];
+
+            const toArray = (obj) => Array.isArray(obj) ? obj : (obj ? Object.values(obj) : []);
+            const normalizeTimestamp = (ts) => {
+                if (!ts) return new Date().toISOString();
+                if (typeof ts === 'number') {
+                    // assume epoch ms or seconds
+                    const ms = ts > 2_000_000_000 ? ts : ts * 1000;
+                    return new Date(ms).toISOString();
+                }
+                return ts;
+            };
+
+            const isPlainObject = (val) => val && typeof val === 'object' && !Array.isArray(val);
+
+            Object.entries(root).forEach(([maybeUserKey, value]) => {
+                // If direct orders flat list, treat keys as orderIds
+                if (isPlainObject(value) && (value.orderId || value.items || value.userName)) {
+                    const order = value;
+                    const items = toArray(order.items);
+                    const totals = order.totals || {};
+                    const total = Number(order.total ?? totals.grandTotal ?? totals.total ?? 0);
+                    aggregated.push({
+                        orderId: order.orderId || maybeUserKey,
+                        customer: order.userName || order.userId || 'Unknown',
+                        items,
+                        totals,
+                        total,
+                        status: order.status || order.payment?.status,
+                        paymentMethod: order.payment?.method,
+                        payment: order.payment || {},
+                        timestamp: normalizeTimestamp(order.timestamp || order.createdAt || order.updatedAt)
+                    });
+                    return;
+                }
+
+                // Skip non-objects like test flags
+                if (!isPlainObject(value)) return;
+
+                // value is user node: orders under it
+                Object.entries(value).forEach(([orderId, order]) => {
+                    if (!isPlainObject(order)) return;
+                    const items = toArray(order.items);
+                    const totals = order.totals || {};
+                    const total = Number(order.total ?? totals.grandTotal ?? totals.total ?? 0);
+                    aggregated.push({
+                        orderId: order.orderId || orderId,
+                        customer: order.userName || maybeUserKey || order.userId || 'Unknown',
+                        items,
+                        totals,
+                        status: order.status || order.payment?.status,
+                        paymentMethod: order.payment?.method,
+                        total,
+                        userEmail: order.userEmail,
+                        userId: order.userId,
+                        shipping: order.shipping || {},
+                        payment: order.payment || {},
+                        admin: order.admin || {},
+                        timeline: order.timeline || {},
+                        timestamp: normalizeTimestamp(order.timestamp || order.createdAt || order.updatedAt)
+                    });
                 });
             });
 
             // Sort newest first
-            orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            aggregated.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            this.orders = orders;
+            this.orders = aggregated;
             this.updateStats();
             this.renderOrdersTable();
         } catch (error) {
@@ -170,11 +219,28 @@ class OrdersManager {
                 const customerEl = formContainer.querySelector('.order-customer');
                 const statusEl = formContainer.querySelector('.order-status');
                 const paymentEl = formContainer.querySelector('.order-payment-method');
+                const paymentStatusEl = formContainer.querySelector('.order-payment-status');
+                const proofWrap = formContainer.querySelector('.order-proof-wrap');
+                const proofImg = formContainer.querySelector('.order-proof-img');
+                const proofLink = formContainer.querySelector('.order-proof-link');
                 if (idEl) idEl.textContent = `Order #${order.orderId}`;
                 if (dateEl) dateEl.textContent = new Date(order.timestamp).toLocaleString();
                 if (customerEl) customerEl.textContent = String(order.customer || 'Unknown');
                 if (statusEl) statusEl.textContent = String(order.status || 'Pending');
-                if (paymentEl) paymentEl.textContent = String(order.paymentMethod || 'TBD');
+                if (paymentEl) paymentEl.textContent = String(order.paymentMethod || order.payment?.method || '—');
+                if (paymentStatusEl) paymentStatusEl.textContent = String(order.payment?.status || order.status || '—');
+                // Proof of payment (supports base64 or URL)
+                const proofRaw = order.payment?.proofBase64 || order.payment?.proof || order.paymentProofBase64 || order.paymentProofUrl || order.totals?.proofBase64 || order.totals?.proofUrl;
+                const proofSrc = proofRaw && /^data:image\//.test(proofRaw) ? proofRaw : (proofRaw ? String(proofRaw) : '');
+                if (proofWrap && proofImg && proofLink) {
+                    if (proofSrc) {
+                        proofImg.src = proofSrc;
+                        proofLink.href = proofSrc;
+                        proofWrap.style.display = '';
+                    } else {
+                        proofWrap.style.display = 'none';
+                    }
+                }
 
                 // Populate items
                 const itemsWrap = formContainer.querySelector('.order-items');
@@ -198,15 +264,25 @@ class OrdersManager {
                     itemsWrap.innerHTML = items || '<div class="list-item">No items</div>';
                 }
 
+                // Shipping
+                const ship = order.shipping || {};
+                const shipNameEl = formContainer.querySelector('.order-ship-name');
+                const shipAddrEl = formContainer.querySelector('.order-ship-address');
+                const shipContactEl = formContainer.querySelector('.order-ship-contact');
+                if (shipNameEl) shipNameEl.textContent = String(ship.name || ship.recipient || order.customer || '—');
+                if (shipAddrEl) shipAddrEl.textContent = [ship.address1, ship.address2, ship.city, ship.state, ship.zip]
+                    .filter(Boolean).join(', ') || '—';
+                if (shipContactEl) shipContactEl.textContent = ship.phone || ship.contact || order.userEmail || '—';
+
                 // Totals (fallbacks if not present on order)
                 const subtotalEl = formContainer.querySelector('.order-subtotal');
                 const taxEl = formContainer.querySelector('.order-tax');
                 const discountEl = formContainer.querySelector('.order-discount');
                 const totalEl = formContainer.querySelector('.order-total');
                 const subtotal = (order.items || []).reduce((sum, it) => sum + (Number(it.price || 0) * (Number(it.qty || it.quantity || 1))), 0);
-                const tax = Number(order.tax || 0);
-                const discount = Number(order.discount || 0);
-                const total = Number(order.total || (subtotal + tax - discount));
+                const tax = Number(order.tax ?? order.totals?.tax ?? 0);
+                const discount = Number(order.discount ?? order.totals?.discount ?? 0);
+                const total = Number(order.total ?? order.totals?.total ?? (subtotal + tax - discount));
                 if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
                 if (taxEl) taxEl.textContent = `$${tax.toFixed(2)}`;
                 if (discountEl) discountEl.textContent = `$${discount.toFixed(2)}`;
@@ -218,6 +294,58 @@ class OrdersManager {
                     document.body.removeChild(overlay);
                     document.body.style.overflow = '';
                 });
+
+                // Status select initial value
+                const statusSelect = formContainer.querySelector('.order-status-select');
+                if (statusSelect) {
+                    const normalized = String(order.status || 'PAYMENT_SUBMITTED').toUpperCase().replace(/\s+/g, '_');
+                    statusSelect.value = normalized;
+                }
+
+                // Save status handler
+                const saveBtn = formContainer.querySelector('.save-status-btn');
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', async () => {
+                        try {
+                            const newStatus = statusSelect ? statusSelect.value : 'PAYMENT_SUBMITTED';
+
+                            // Try to find path under TBL_ORDERS/{userKey}/{orderId}
+                            const rootRef = window.firebaseDatabase.ref(window.database, 'TBL_ORDERS');
+                            const rootSnap = await window.firebaseDatabase.get(rootRef);
+                            const rootVal = rootSnap.val() || {};
+
+                            let updated = false;
+                            for (const [userKey, ordersNode] of Object.entries(rootVal)) {
+                                if (ordersNode && typeof ordersNode === 'object' && ordersNode[order.orderId]) {
+                                    const targetRef = window.firebaseDatabase.ref(window.database, `TBL_ORDERS/${userKey}/${order.orderId}`);
+                                    await window.firebaseDatabase.update(targetRef, { status: newStatus });
+                                    updated = true;
+                                    break;
+                                }
+                            }
+
+                            // Fallback: flat structure TBL_ORDERS/{orderId}
+                            if (!updated && rootVal[order.orderId]) {
+                                const flatRef = window.firebaseDatabase.ref(window.database, `TBL_ORDERS/${order.orderId}`);
+                                await window.firebaseDatabase.update(flatRef, { status: newStatus });
+                                updated = true;
+                            }
+
+                            // Update local state and UI badge
+                            order.status = newStatus;
+                            const statusText = formContainer.querySelector('.order-status');
+                            if (statusText) statusText.textContent = newStatus.replace(/_/g, ' ');
+                            const paymentStatusEl2 = formContainer.querySelector('.order-payment-status');
+                            if (paymentStatusEl2) paymentStatusEl2.textContent = newStatus.replace(/_/g, ' ');
+
+                            // Rerender list row
+                            this.renderOrdersTable();
+                        } catch (err) {
+                            console.error('Failed to update order status:', err);
+                            alert('Failed to update status');
+                        }
+                    });
+                }
 
                 overlay.appendChild(formContainer);
                 document.body.appendChild(overlay);

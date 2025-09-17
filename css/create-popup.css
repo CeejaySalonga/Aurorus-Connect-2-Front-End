@@ -241,7 +241,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 0; /* remove outer gap that appeared as an extra border */
     z-index: 1000;
     overflow: hidden;
 }

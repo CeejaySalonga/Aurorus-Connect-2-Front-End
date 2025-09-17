@@ -1,86 +1,126 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../css/create-popup.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <title>View Order</title>
-</head>
-<body>
-  <div class="form-container">
+<div class="form-container order-details">
+    <style>
+        /* Scoped to this modal only */
+        .order-details .header-meta { color:#666; margin-top:6px; display:flex; flex-wrap:wrap; gap:8px; font-size:13px; }
+        .order-details .header-meta .dot { opacity:.6; }
+        .order-details .two-col { display:grid; grid-template-columns: 1.1fr .9fr; gap:20px; }
+        .order-details .section-title { margin:0 0 8px 0; color:#333; font-weight:700; font-size:14px; }
+        .order-details .list-item { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f2f4; }
+        .order-details .list-item:last-child { border-bottom:none; }
+        .order-details .item-main { min-width:0; }
+        .order-details .item-title { font-weight:600; color:#222; }
+        .order-details .item-subtitle { color:#6b7280; font-size:12px; }
+        .order-details .item-meta { color:#111; font-weight:600; white-space:nowrap; }
+        .order-details .proof-card { margin-top:10px; }
+        .order-details .proof-card img { width:220px; height:220px; object-fit:cover; border-radius:10px; border:1px solid #e5e7eb; display:block; }
+        .order-details .totals-row { display:flex; justify-content:space-between; margin:6px 0; }
+        .order-details .totals-row.total { margin-top:10px; font-size:16px; font-weight:700; }
+        .order-details .card { background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:14px 16px; }
+        .order-details .card + .card { margin-top:14px; }
+        .order-details .card-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+        .order-details .card-title { display:flex; align-items:center; gap:8px; font-weight:700; }
+        .order-details .status-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; text-transform:uppercase; }
+        .order-details .summary { background:linear-gradient(90deg, #a78bfa, #60a5fa); color:#fff; border-radius:12px; padding:12px 16px; }
+        .order-details .summary .totals-row { color:#fff; }
+        .order-details .summary .totals-row.total { border-top:1px solid rgba(255,255,255,.35); padding-top:10px; }
+    </style>
     <div class="form-header">
-      <h2><i class="fas fa-receipt"></i> View Order</h2>
+        <h2><i class="fas fa-receipt"></i> View Order</h2>
     </div>
 
     <div class="form-section">
-      <div class="event-info">
-        <h4 class="event-name order-id">Order #000000</h4>
-        <div class="event-details">
-          <div class="detail-row">
-            <span class="detail-label">Date:</span>
-            <span class="detail-value order-date">TBD</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Customer:</span>
-            <span class="detail-value order-customer">TBD</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Status:</span>
-            <span class="status-badge order-status">Pending</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Payment:</span>
-            <span class="detail-value order-payment-method">TBD</span>
-          </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                    <div>
+                        <div class="order-id" style="font-weight:700;">Order #</div>
+                        <div class="header-meta">
+                            <span class="order-date"></span>
+                            <span class="dot">•</span>
+                            <span class="order-customer"></span>
+                        </div>
+                    </div>
+                </div>
+                <span class="status-badge"><i class="fas fa-check"></i><span class="order-status">Status</span></span>
+            </div>
         </div>
-      </div>
     </div>
 
-    <div class="form-section">
-      <h4 style="margin: 0 0 12px 0;">Items</h4>
-      <div class="past-events-list order-items">
-        <!-- Items injected by JS. Example structure:
-        <div class="list-item">
-          <div class="item-main">
-            <div class="item-title">Product Name</div>
-            <div class="item-subtitle">Variant / Specs</div>
-          </div>
-          <div class="item-meta">Qty x Price = Line Total</div>
-        </div>
-        -->
-      </div>
-    </div>
+    <div class="form-section" style="padding-top:0;">
+        <div class="two-col">
+            <div class="form-column">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-box"></i> Items</div>
+                    </div>
+                    <div class="order-items"></div>
+                    <div class="totals-row" style="margin-top:8px;">
+                        <span>Subtotal</span>
+                        <span class="order-subtotal">$0.00</span>
+                    </div>
+                </div>
+                <div class="summary" style="margin-top:14px;">
+                    <div class="totals-row">
+                        <span>Subtotal</span>
+                        <span class="order-subtotal">$0.00</span>
+                    </div>
+                    <div class="totals-row">
+                        <span>Tax</span>
+                        <span class="order-tax">$0.00</span>
+                    </div>
+                    <div class="totals-row">
+                        <span>Discounts</span>
+                        <span class="order-discount">$0.00</span>
+                    </div>
+                    <div class="totals-row total">
+                        <span>Total</span>
+                        <span class="order-total">$0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-credit-card"></i> Payment</div>
+                        <span class="status-badge"><i class="fas fa-check"></i><span class="order-payment-status">Status</span></span>
+                    </div>
+                    <div class="order-payment-details">
+                        <div class="list-item"><div class="item-main"><div class="item-title">Method</div></div><div class="item-meta order-payment-method"></div></div>
+                    </div>
+                    <div class="order-proof-wrap proof-card" style="display:none;">
+                        <div class="item-title" style="margin-bottom:6px;">Proof of Payment</div>
+                        <a class="order-proof-link" href="#" target="_blank" rel="noopener">
+                            <img class="order-proof-img" alt="Proof of payment">
+                        </a>
+                    </div>
+                </div>
 
-    <div class="form-section">
-      <div class="event-details">
-        <div class="detail-row">
-          <span class="detail-label">Subtotal:</span>
-          <span class="detail-value order-subtotal">$0.00</span>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-truck"></i> Shipping</div>
+                    </div>
+                    <div class="order-shipping-details">
+                        <div class="list-item"><div class="item-main"><div class="item-title">Name</div></div><div class="item-meta order-ship-name"></div></div>
+                        <div class="list-item"><div class="item-main"><div class="item-title">Address</div></div><div class="item-meta order-ship-address"></div></div>
+                        <div class="list-item"><div class="item-main"><div class="item-title">Contact</div></div><div class="item-meta order-ship-contact"></div></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">Tax:</span>
-          <span class="detail-value order-tax">$0.00</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Discounts:</span>
-          <span class="detail-value order-discount">$0.00</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Total:</span>
-          <span class="detail-value order-total"><strong>$0.00</strong></span>
-        </div>
-      </div>
     </div>
 
     <div class="button-group">
-      <button class="back-btn">
-        <i class="fas fa-arrow-left"></i>
-        Close
-      </button>
+        <button class="back-btn"><i class="fas fa-arrow-left"></i> Close</button>
+        <div class="action-buttons">
+            <select class="order-status-select">
+                <option value="PAYMENT_SUBMITTED">Payment Submitted</option>
+                <option value="TO_SHIP">To Ship</option>
+                <option value="READY_TO_PICKUP">Ready to Pickup</option>
+            </select>
+            <button class="confirm-btn save-status-btn"><i class="fas fa-save"></i> Save Status</button>
+        </div>
     </div>
-  </div>
-</body>
-</html>
+</div>
 
 
