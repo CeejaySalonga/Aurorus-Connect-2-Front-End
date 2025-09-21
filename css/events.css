@@ -261,6 +261,44 @@
     border-color: #cbd5e0;
 }
 
+/* Form Input Styles for Modals */
+.status-selection input[type="text"] {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    background: white;
+    color: #2d3748;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.status-selection input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.status-selection input[type="text"]:hover {
+    border-color: #cbd5e0;
+}
+
+.status-selection input[type="text"]::placeholder {
+    color: #a0aec0;
+}
+
+.status-selection input[type="text"]:read-only {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.status-selection input[type="text"]:read-only:focus {
+    border-color: #e2e8f0;
+    box-shadow: none;
+}
+
 /* Modal Actions */
 .modal-actions {
     display: flex;
@@ -293,6 +331,28 @@
 
 .modal-actions button:hover::before {
     left: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
 }
 
 
@@ -423,6 +483,7 @@
     position: relative;
     z-index: 1;
     height: 320px;
+    cursor: pointer;
 }
 
 .event-card:hover {
@@ -457,6 +518,7 @@
     text-transform: uppercase;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     word-wrap: break-word;
@@ -513,6 +575,7 @@
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     word-wrap: break-word;
     hyphens: auto;
@@ -562,6 +625,518 @@
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
+/* Tournament View Styles */
+.tournament-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 0;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 24px;
+}
+
+.back-to-events-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    width: fit-content;
+}
+
+.back-to-events-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.tournament-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.tournament-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.tournament-date,
+.tournament-location {
+    font-size: 16px;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.tournament-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tournament-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0;
+}
+
+.tournament-tab {
+    background: none;
+    border: none;
+    padding: 16px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tournament-tab:hover {
+    color: #495057;
+    background-color: #f8f9fa;
+}
+
+.tournament-tab.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.tournament-tab-content {
+    min-height: 400px;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Participants Panel */
+.participants-header,
+.matchmaking-header,
+.rounds-header,
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.participants-header h3,
+.matchmaking-header h3,
+.rounds-header h3,
+.results-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.add-participant-btn,
+.generate-bracket-btn,
+.add-round-btn,
+.export-results-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.add-participant-btn:hover,
+.generate-bracket-btn:hover,
+.add-round-btn:hover,
+.export-results-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.participants-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.participant-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.participant-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.participant-avatar {
+    width: 48px;
+    height: 48px;
+    background-color: #007bff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.participant-profile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.participant-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.participant-details p {
+    margin: 0;
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.participant-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-participant-btn,
+.remove-participant-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.edit-participant-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.edit-participant-btn:hover {
+    background-color: #0056b3;
+}
+
+.remove-participant-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.remove-participant-btn:hover {
+    background-color: #c82333;
+}
+
+/* Empty States */
+.no-participants,
+.no-bracket,
+.no-rounds,
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.no-participants i,
+.no-bracket i,
+.no-rounds i,
+.no-results i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #dee2e6;
+}
+
+.no-participants p,
+.no-bracket p,
+.no-rounds p,
+.no-results p {
+    font-size: 16px;
+    margin-bottom: 24px;
+}
+
+/* Bracket Visualization */
+.bracket-container {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 24px;
+    min-height: 300px;
+}
+
+.bracket-visualization {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.bracket-round {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.bracket-round h4 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.bracket-matches {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Rounds Panel */
+.rounds-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.round-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.round-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.round-header h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.round-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.round-details {
+    margin-bottom: 16px;
+}
+
+.round-details p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.round-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.view-round-btn,
+.edit-round-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-round-btn {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.view-round-btn:hover {
+    background-color: #138496;
+}
+
+.edit-round-btn {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.edit-round-btn:hover {
+    background-color: #e0a800;
+}
+
+/* Results Panel */
+.results-container {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 24px;
+    min-height: 300px;
+}
+
+.results-podium {
+    display: flex;
+    justify-content: center;
+    align-items: end;
+    gap: 24px;
+    margin-top: 40px;
+}
+
+.podium-item {
+    text-align: center;
+    min-width: 120px;
+}
+
+.podium-item.first {
+    order: 2;
+}
+
+.podium-item.second {
+    order: 1;
+}
+
+.podium-item.third {
+    order: 3;
+}
+
+.podium-rank {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+}
+
+.podium-item.first .podium-rank {
+    background-color: #ffd700;
+    color: #333;
+}
+
+.podium-item.second .podium-rank {
+    background-color: #c0c0c0;
+    color: #333;
+}
+
+.podium-item.third .podium-rank {
+    background-color: #cd7f32;
+    color: white;
+}
+
+.podium-player {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+/* Tournament Dashboard */
+.tournament-status {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.status-value {
+    color: #2d3748;
+    font-size: 14px;
+}
+
 /* Responsive grid for events */
 @media (max-width: 1200px) {
     .events-list {
@@ -572,5 +1147,30 @@
 @media (max-width: 768px) {
     .events-list {
         grid-template-columns: 1fr;
+    }
+    
+    .tournament-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .tournament-tab {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+    
+    .participants-list,
+    .rounds-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .results-podium {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .podium-item {
+        order: unset !important;
     }
 }

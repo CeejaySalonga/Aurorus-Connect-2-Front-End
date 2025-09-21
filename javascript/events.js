@@ -6,6 +6,38 @@ class EventManager {
         this.init();
     }
 
+    // Utility function to convert base64 to proper image source
+    convertToImageSrc(base64Data) {
+        if (!base64Data) return '';
+        
+        // If it's already a data URL, return as is
+        if (base64Data.startsWith('data:image/')) {
+            return base64Data;
+        }
+        
+        // If it's a URL, return as is
+        if (base64Data.startsWith('http')) {
+            return base64Data;
+        }
+        
+        // Try to detect image format from base64 header
+        const formats = [
+            { header: '/9j/', format: 'jpeg' },
+            { header: 'iVBORw0KGgo', format: 'png' },
+            { header: 'R0lGOD', format: 'gif' },
+            { header: 'UklGR', format: 'webp' }
+        ];
+        
+        for (const { header, format } of formats) {
+            if (base64Data.startsWith(header)) {
+                return `data:image/${format};base64,${base64Data}`;
+            }
+        }
+        
+        // Default to PNG if we can't detect the format
+        return `data:image/png;base64,${base64Data}`;
+    }
+
     init() {
         this.setupEventListeners();
         // Wait for Firebase to be ready before loading events
@@ -21,9 +53,22 @@ class EventManager {
     setupEventListeners() {
         // Create event button is handled by create-popup.js
 
+        // Event card click to view tournament
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.event-card') && !e.target.closest('.event-card-actions')) {
+                const eventCard = e.target.closest('.event-card');
+                const eventTitle = eventCard.querySelector('.event-card-title').textContent;
+                const event = this.events.find(evt => evt.eventName === eventTitle);
+                if (event) {
+                    this.showTournamentView(event);
+                }
+            }
+        });
+
         // Edit event buttons
         document.addEventListener('click', (e) => {
             if (e.target.closest('.edit-event-btn')) {
+                e.stopPropagation(); // Prevent event card click
                 const eventCard = e.target.closest('.event-card');
                 const eventTitle = eventCard.querySelector('.event-card-title').textContent;
                 const event = this.events.find(evt => evt.eventName === eventTitle);
@@ -44,6 +89,7 @@ class EventManager {
         // Update status buttons
         document.addEventListener('click', (e) => {
             if (e.target.closest('.update-status-btn')) {
+                e.stopPropagation(); // Prevent event card click
                 const eventCard = e.target.closest('.event-card');
                 const eventTitle = eventCard.querySelector('.event-card-title').textContent;
                 const event = this.events.find(evt => evt.eventName === eventTitle);
@@ -855,6 +901,684 @@ class EventManager {
                  notification.remove();
              }
          }, 3000);
+     }
+
+     showTournamentView(event) {
+         // Store current view state
+         this.currentView = 'tournament';
+         this.selectedEvent = event;
+         
+         // Update main content
+         this.renderTournamentView(event);
+         
+         // Update right panel
+         this.updateTournamentDashboard(event);
+     }
+
+     renderTournamentView(event) {
+         const mainContent = document.querySelector('.main-content');
+         if (!mainContent) return;
+
+         mainContent.innerHTML = `
+             <div class="tournament-header">
+                 <button class="back-to-events-btn" onclick="window.eventManager.showEventsList()">
+                     <i class="fas fa-arrow-left"></i>
+                     Back to Events
+                 </button>
+                 <h1 class="tournament-title">${event.eventName}</h1>
+                 <div class="tournament-meta">
+                     <span class="tournament-date">${event.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'TBD'}</span>
+                     <span class="tournament-location">${event.location || 'Location TBD'}</span>
+                     <span class="status-badge status-${event.status || 'active'}">${(event.status || 'active').charAt(0).toUpperCase() + (event.status || 'active').slice(1)}</span>
+                 </div>
+             </div>
+
+             <div class="tournament-content">
+                 <div class="tournament-tabs">
+                     <button class="tournament-tab active" data-tab="participants">
+                         <i class="fas fa-users"></i>
+                         Participants
+                     </button>
+                     <button class="tournament-tab" data-tab="matchmaking">
+                         <i class="fas fa-random"></i>
+                         Matchmaking
+                     </button>
+                     <button class="tournament-tab" data-tab="rounds">
+                         <i class="fas fa-trophy"></i>
+                         Rounds
+                     </button>
+                     <button class="tournament-tab" data-tab="results">
+                         <i class="fas fa-medal"></i>
+                         Results
+                     </button>
+                 </div>
+
+                 <div class="tournament-tab-content">
+                     <div class="tab-panel active" id="participants-panel">
+                         <div class="participants-header">
+                             <h3>Tournament Participants</h3>
+                             <button class="add-participant-btn">
+                                 <i class="fas fa-plus"></i>
+                                 Add Participant
+                             </button>
+                         </div>
+                         <div class="participants-list" id="participantsList">
+                             <!-- Participants will be loaded here -->
+                         </div>
+                     </div>
+
+                     <div class="tab-panel" id="matchmaking-panel">
+                         <div class="matchmaking-header">
+                             <h3>Tournament Bracket</h3>
+                             <button class="generate-bracket-btn">
+                                 <i class="fas fa-magic"></i>
+                                 Generate Bracket
+                             </button>
+                         </div>
+                         <div class="bracket-container" id="bracketContainer">
+                             <!-- Tournament bracket will be displayed here -->
+                         </div>
+                     </div>
+
+                     <div class="tab-panel" id="rounds-panel">
+                         <div class="rounds-header">
+                             <h3>Tournament Rounds</h3>
+                             <button class="add-round-btn">
+                                 <i class="fas fa-plus"></i>
+                                 Add Round
+                             </button>
+                         </div>
+                         <div class="rounds-list" id="roundsList">
+                             <!-- Rounds will be displayed here -->
+                         </div>
+                     </div>
+
+                     <div class="tab-panel" id="results-panel">
+                         <div class="results-header">
+                             <h3>Final Results</h3>
+                             <button class="export-results-btn">
+                                 <i class="fas fa-download"></i>
+                                 Export Results
+                             </button>
+                         </div>
+                         <div class="results-container" id="resultsContainer">
+                             <!-- Results will be displayed here -->
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         `;
+
+         // Setup tab switching
+         this.setupTournamentTabs();
+         
+         // Load tournament data
+         this.loadTournamentData(event);
+     }
+
+     setupTournamentTabs() {
+         const tabs = document.querySelectorAll('.tournament-tab');
+         const panels = document.querySelectorAll('.tab-panel');
+
+         tabs.forEach(tab => {
+             tab.addEventListener('click', () => {
+                 // Remove active class from all tabs and panels
+                 tabs.forEach(t => t.classList.remove('active'));
+                 panels.forEach(p => p.classList.remove('active'));
+
+                 // Add active class to clicked tab and corresponding panel
+                 tab.classList.add('active');
+                 const tabId = tab.dataset.tab;
+                 const panel = document.getElementById(`${tabId}-panel`);
+                 if (panel) {
+                     panel.classList.add('active');
+                 }
+             });
+         });
+
+         // Setup add participant button
+         const addParticipantBtns = document.querySelectorAll('.add-participant-btn');
+         addParticipantBtns.forEach(btn => {
+             btn.addEventListener('click', () => {
+                 this.showAddParticipantModal();
+             });
+         });
+     }
+
+     async loadTournamentData(event) {
+         try {
+             // Load participants
+             await this.loadParticipants(event.id);
+             
+             // Load matchmaking/bracket data
+             await this.loadMatchmakingData(event.id);
+             
+             // Load rounds data
+             await this.loadRoundsData(event.id);
+             
+             // Load results data
+             await this.loadResultsData(event.id);
+         } catch (error) {
+             console.error('Error loading tournament data:', error);
+             this.showNotification('Error loading tournament data', 'error');
+         }
+     }
+
+     async loadParticipants(eventId) {
+         try {
+             // Get participants from TBL_EVENTS/{eventId}/participants
+             const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+             const snapshot = await window.firebaseDatabase.get(participantsRef);
+             const participants = snapshot.val() || {};
+
+             const participantsList = document.getElementById('participantsList');
+             if (!participantsList) return;
+
+             if (Object.keys(participants).length === 0) {
+                 participantsList.innerHTML = `
+                     <div class="no-participants">
+                         <i class="fas fa-users"></i>
+                         <p>No participants registered yet</p>
+                         <button class="add-participant-btn">
+                             <i class="fas fa-plus"></i>
+                             Add First Participant
+                         </button>
+                     </div>
+                 `;
+                 return;
+             }
+
+             // Get all users from the users table
+             const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+             const usersSnapshot = await window.firebaseDatabase.get(usersRef);
+             const users = usersSnapshot.val() || {};
+
+             // Create a map of userId to user data for quick lookup
+             const userMap = {};
+             Object.entries(users).forEach(([userId, userData]) => {
+                 if (userData) {
+                     userMap[userId] = userData;
+                 }
+             });
+
+             // Debug: Log user data structure
+             console.log('Users data structure:', {
+                 totalUsers: Object.keys(users).length,
+                 sampleUser: Object.keys(users).length > 0 ? users[Object.keys(users)[0]] : null,
+                 userMapSize: Object.keys(userMap).length
+             });
+
+             participantsList.innerHTML = Object.entries(participants).map(([id, participant]) => {
+                 const userId = participant.userId || id;
+                 const userData = userMap[userId];
+                 
+                 // Use user data from users table if available, fallback to participant data
+                 const displayName = userData?.userName || userData?.name || participant.name || participant.userName || 'Unknown Player';
+                 const userEmail = userData?.email || '';
+                 const profilePicture = userData?.profilePicture || userData?.profileImage || userData?.avatar || '';
+
+                 // Debug: Log profile picture data
+                 if (profilePicture) {
+                     console.log(`Profile picture for ${displayName}:`, {
+                         original: profilePicture.substring(0, 100) + '...',
+                         startsWithData: profilePicture.startsWith('data:image/'),
+                         startsWithHttp: profilePicture.startsWith('http'),
+                         length: profilePicture.length
+                     });
+                 }
+
+                 // Convert base64 to proper image source using utility function
+                 const imageSrc = this.convertToImageSrc(profilePicture);
+
+                 return `
+                     <div class="participant-card">
+                         <div class="participant-info">
+                             <div class="participant-avatar">
+                                 ${imageSrc ? 
+                                     `<img src="${imageSrc}" alt="${displayName}" class="participant-profile-img" onerror="console.log('Image failed to load for ${displayName}'); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                      <i class="fas fa-user" style="display: none;"></i>` :
+                                     `<i class="fas fa-user"></i>`
+                                 }
+                             </div>
+                             <div class="participant-details">
+                                 <h4>${displayName}</h4>
+                                 <p>ID: ${userId}</p>
+                                 ${userEmail ? `<p>Email: ${userEmail}</p>` : ''}
+                                 <p>Registered: ${participant.registeredAt ? new Date(participant.registeredAt).toLocaleDateString() : 'Unknown'}</p>
+                                 ${participant.status ? `<p>Status: <span class="status-badge status-${participant.status}">${participant.status.charAt(0).toUpperCase() + participant.status.slice(1)}</span></p>` : ''}
+                             </div>
+                         </div>
+                         <div class="participant-actions">
+                             <button class="edit-participant-btn" title="Edit" onclick="window.eventManager.editParticipant('${eventId}', '${id}')">
+                                 <i class="fas fa-edit"></i>
+                             </button>
+                             <button class="remove-participant-btn" title="Remove" onclick="window.eventManager.removeParticipant('${eventId}', '${id}')">
+                                 <i class="fas fa-trash"></i>
+                             </button>
+                         </div>
+                     </div>
+                 `;
+             }).join('');
+
+             // Update participant count in dashboard
+             const participantCountEl = document.getElementById('participantCount');
+             if (participantCountEl) {
+                 participantCountEl.textContent = Object.keys(participants).length;
+             }
+         } catch (error) {
+             console.error('Error loading participants:', error);
+             this.showNotification('Error loading participants', 'error');
+         }
+     }
+
+     async loadMatchmakingData(eventId) {
+         try {
+             const bracketRef = window.firebaseDatabase.ref(window.database, `TBL_TOURNAMENT_BRACKETS/${eventId}`);
+             const snapshot = await window.firebaseDatabase.get(bracketRef);
+             const bracketData = snapshot.val();
+
+             const bracketContainer = document.getElementById('bracketContainer');
+             if (!bracketContainer) return;
+
+             if (!bracketData) {
+                 bracketContainer.innerHTML = `
+                     <div class="no-bracket">
+                         <i class="fas fa-random"></i>
+                         <p>No bracket generated yet</p>
+                         <button class="generate-bracket-btn">
+                             <i class="fas fa-magic"></i>
+                             Generate Bracket
+                         </button>
+                     </div>
+                 `;
+                 return;
+             }
+
+             // Render bracket visualization
+             bracketContainer.innerHTML = this.renderBracket(bracketData);
+         } catch (error) {
+             console.error('Error loading matchmaking data:', error);
+         }
+     }
+
+     async loadRoundsData(eventId) {
+         try {
+             const roundsRef = window.firebaseDatabase.ref(window.database, `TBL_TOURNAMENT_ROUNDS/${eventId}`);
+             const snapshot = await window.firebaseDatabase.get(roundsRef);
+             const rounds = snapshot.val() || {};
+
+             const roundsList = document.getElementById('roundsList');
+             if (!roundsList) return;
+
+             if (Object.keys(rounds).length === 0) {
+                 roundsList.innerHTML = `
+                     <div class="no-rounds">
+                         <i class="fas fa-trophy"></i>
+                         <p>No rounds created yet</p>
+                         <button class="add-round-btn">
+                             <i class="fas fa-plus"></i>
+                             Create First Round
+                         </button>
+                     </div>
+                 `;
+                 return;
+             }
+
+             roundsList.innerHTML = Object.entries(rounds).map(([id, round]) => `
+                 <div class="round-card">
+                     <div class="round-header">
+                         <h4>Round ${round.roundNumber || id}</h4>
+                         <span class="round-status status-${round.status || 'pending'}">${(round.status || 'pending').charAt(0).toUpperCase() + (round.status || 'pending').slice(1)}</span>
+                     </div>
+                     <div class="round-details">
+                         <p>Matches: ${round.matches ? Object.keys(round.matches).length : 0}</p>
+                         <p>Start Time: ${round.startTime ? new Date(round.startTime).toLocaleString() : 'TBD'}</p>
+                     </div>
+                     <div class="round-actions">
+                         <button class="view-round-btn" title="View Details">
+                             <i class="fas fa-eye"></i>
+                         </button>
+                         <button class="edit-round-btn" title="Edit">
+                             <i class="fas fa-edit"></i>
+                         </button>
+                     </div>
+                 </div>
+             `).join('');
+         } catch (error) {
+             console.error('Error loading rounds data:', error);
+         }
+     }
+
+     async loadResultsData(eventId) {
+         try {
+             const resultsRef = window.firebaseDatabase.ref(window.database, `TBL_TOURNAMENT_RESULTS/${eventId}`);
+             const snapshot = await window.firebaseDatabase.get(resultsRef);
+             const results = snapshot.val();
+
+             const resultsContainer = document.getElementById('resultsContainer');
+             if (!resultsContainer) return;
+
+             if (!results) {
+                 resultsContainer.innerHTML = `
+                     <div class="no-results">
+                         <i class="fas fa-medal"></i>
+                         <p>No results available yet</p>
+                         <p>Results will appear here once the tournament is completed</p>
+                     </div>
+                 `;
+                 return;
+             }
+
+             // Render results
+             resultsContainer.innerHTML = this.renderResults(results);
+         } catch (error) {
+             console.error('Error loading results data:', error);
+         }
+     }
+
+     renderBracket(bracketData) {
+         // Simple bracket visualization
+         return `
+             <div class="bracket-visualization">
+                 <div class="bracket-round">
+                     <h4>Round 1</h4>
+                     <div class="bracket-matches">
+                         <!-- Matches will be rendered here -->
+                     </div>
+                 </div>
+             </div>
+         `;
+     }
+
+     renderResults(results) {
+         return `
+             <div class="results-podium">
+                 <div class="podium-item first">
+                     <div class="podium-rank">1st</div>
+                     <div class="podium-player">${results.firstPlace || 'TBD'}</div>
+                 </div>
+                 <div class="podium-item second">
+                     <div class="podium-rank">2nd</div>
+                     <div class="podium-player">${results.secondPlace || 'TBD'}</div>
+                 </div>
+                 <div class="podium-item third">
+                     <div class="podium-rank">3rd</div>
+                     <div class="podium-player">${results.thirdPlace || 'TBD'}</div>
+                 </div>
+             </div>
+         `;
+     }
+
+     updateTournamentDashboard(event) {
+         const dashboard = document.querySelector('.dashboard');
+         if (!dashboard) return;
+
+         dashboard.innerHTML = `
+             <h2 class="dashboard-title">${event.eventName}</h2>
+             <p class="date">${event.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'TBD'}</p>
+             
+             <div class="stats-section">
+                 <div class="stat-item">
+                     <div class="stat-label">PARTICIPANTS</div>
+                     <div class="stat-value" id="participantCount">0</div>
+                 </div>
+                 
+                 <div class="stat-item">
+                     <div class="stat-label">ROUNDS</div>
+                     <div class="stat-value" id="roundCount">0</div>
+                 </div>
+                 
+                 <div class="stat-item">
+                     <div class="stat-label">MATCHES</div>
+                     <div class="stat-value" id="matchCount">0</div>
+                 </div>
+             </div>
+             
+             <div class="section-title">TOURNAMENT STATUS</div>
+             
+             <div class="tournament-status">
+                 <div class="status-item">
+                     <span class="status-label">Status:</span>
+                     <span class="status-badge status-${event.status || 'active'}">${(event.status || 'active').charAt(0).toUpperCase() + (event.status || 'active').slice(1)}</span>
+                 </div>
+                 <div class="status-item">
+                     <span class="status-label">Location:</span>
+                     <span class="status-value">${event.location || 'TBD'}</span>
+                 </div>
+                 <div class="status-item">
+                     <span class="status-label">Capacity:</span>
+                     <span class="status-value">${event.capacity || 'Unlimited'}</span>
+                 </div>
+             </div>
+         `;
+     }
+
+     showEventsList() {
+         this.currentView = 'events';
+         this.selectedEvent = null;
+         
+         // Restore original events view
+         const mainContent = document.querySelector('.main-content');
+         if (mainContent) {
+             mainContent.innerHTML = `
+                 <div class="events-top-section">
+                     <h1 class="page-title">Event Management</h1>
+                 </div>
+                 
+                 <div class="create-event-section">
+                     <button class="create-event-btn">
+                         <i class="fas fa-plus"></i>
+                         Create Event
+                     </button>
+                 </div>
+                 
+                 <div class="events-middle-section">
+                     <div class="events-list" id="eventsList">
+                         <!-- Events will be loaded dynamically -->
+                     </div>
+                 </div>
+                 
+                 <div class="events-bottom-section">
+                     <button class="past-events-btn">
+                         <i class="fas fa-history"></i>
+                         Past Events
+                     </button>
+                 </div>
+             `;
+         }
+
+         // Restore original dashboard
+         const dashboard = document.querySelector('.dashboard');
+         if (dashboard) {
+             dashboard.innerHTML = `
+                 <h2 class="dashboard-title">Aurorus Connect</h2>
+                 <p class="date"></p>
+                 
+                 <div class="stats-section">
+                     <div class="stat-item">
+                         <div class="stat-label">EVENTS TODAY</div>
+                         <div class="stat-value" id="eventsToday">0</div>
+                     </div>
+                     
+                     <div class="stat-item">
+                         <div class="stat-label">PARTICIPANTS</div>
+                         <div class="stat-value" id="totalParticipants">0</div>
+                     </div>
+                     
+                     <div class="stat-item">
+                         <div class="stat-label">TOURNAMENTS</div>
+                         <div class="stat-value" id="totalTournaments">0</div>
+                     </div>
+                 </div>
+                 
+                 <div class="section-title">UPCOMING</div>
+                 
+                 <div class="events-section" id="upcomingEvents">
+                     <!-- Upcoming events will be loaded dynamically -->
+                 </div>
+             `;
+         }
+
+         // Re-render events
+         this.renderEvents();
+     }
+
+     async editParticipant(eventId, participantId) {
+         // TODO: Implement participant editing functionality
+         this.showNotification('Edit participant functionality coming soon', 'info');
+     }
+
+     async removeParticipant(eventId, participantId) {
+         if (confirm('Are you sure you want to remove this participant from the event?')) {
+             try {
+                 const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants/${participantId}`);
+                 await window.firebaseDatabase.remove(participantRef);
+                 
+                 this.showNotification('Participant removed successfully', 'success');
+                 
+                 // Reload participants for the current event
+                 if (this.selectedEvent && this.selectedEvent.id === eventId) {
+                     await this.loadParticipants(eventId);
+                 }
+             } catch (error) {
+                 console.error('Error removing participant:', error);
+                 this.showNotification('Error removing participant', 'error');
+             }
+         }
+     }
+
+     async showAddParticipantModal() {
+         if (!this.selectedEvent) {
+             this.showNotification('No event selected', 'error');
+             return;
+         }
+
+         try {
+             // Get all users from the users table
+             const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+             const usersSnapshot = await window.firebaseDatabase.get(usersRef);
+             const users = usersSnapshot.val() || {};
+
+             // Get existing participants to exclude them from the dropdown
+             const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${this.selectedEvent.id}/participants`);
+             const participantsSnapshot = await window.firebaseDatabase.get(participantsRef);
+             const existingParticipants = participantsSnapshot.val() || {};
+             const existingUserIds = Object.keys(existingParticipants);
+
+             // Filter out users who are already participants
+             const availableUsers = Object.entries(users).filter(([userId, userData]) => 
+                 userData && userData.userName && !existingUserIds.includes(userId)
+             );
+
+             const modal = document.createElement('div');
+             modal.className = 'modal';
+             modal.innerHTML = `
+                 <div class="modal-content">
+                     <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                         <h3>Add Participant</h3>
+                     </div>
+                     <div class="modal-body">
+                         <div class="event-info">
+                             <h4>${this.selectedEvent.eventName}</h4>
+                             <div class="event-details">
+                                 <div class="detail-row">
+                                     <span class="detail-label">Date:</span>
+                                     <span class="detail-value">${this.selectedEvent.eventDate ? new Date(this.selectedEvent.eventDate).toLocaleDateString() : 'TBD'}</span>
+                                 </div>
+                                 <div class="detail-row">
+                                     <span class="detail-label">Location:</span>
+                                     <span class="detail-value">${this.selectedEvent.location || 'TBD'}</span>
+                                 </div>
+                             </div>
+                         </div>
+                         
+                         <div class="status-selection">
+                             <label for="userSelect">Select User *</label>
+                             <select id="userSelect" required>
+                                 <option value="">Choose a user...</option>
+                                 ${availableUsers.map(([userId, userData]) => 
+                                     `<option value="${userId}" data-name="${userData.userName}" data-email="${userData.email || ''}">
+                                         ${userData.userName} (${userId})${userData.email ? ` - ${userData.email}` : ''}
+                                     </option>`
+                                 ).join('')}
+                             </select>
+                         </div>
+                         
+                         <div class="status-selection">
+                             <label for="participantUserId">User ID (Auto-filled)</label>
+                             <input type="text" id="participantUserId" readonly placeholder="Will be filled automatically">
+                         </div>
+                         
+                         <div class="status-selection">
+                             <label for="participantUserName">User Name (Auto-filled)</label>
+                             <input type="text" id="participantUserName" readonly placeholder="Will be filled automatically">
+                         </div>
+                     </div>
+                     <div class="modal-actions">
+                         <button type="button" class="btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                         <button type="button" class="btn-primary" id="addParticipantConfirm">Add Participant</button>
+                     </div>
+                 </div>
+             `;
+             
+             document.body.appendChild(modal);
+
+             // Handle user selection
+             const userSelect = document.getElementById('userSelect');
+             const userIdInput = document.getElementById('participantUserId');
+             const userNameInput = document.getElementById('participantUserName');
+
+             userSelect.addEventListener('change', (e) => {
+                 const selectedOption = e.target.options[e.target.selectedIndex];
+                 if (selectedOption.value) {
+                     userIdInput.value = selectedOption.value;
+                     userNameInput.value = selectedOption.dataset.name;
+                 } else {
+                     userIdInput.value = '';
+                     userNameInput.value = '';
+                 }
+             });
+
+             // Handle form submission
+             const confirmBtn = document.getElementById('addParticipantConfirm');
+             confirmBtn.addEventListener('click', async () => {
+                 const userId = userIdInput.value.trim();
+                 const userName = userNameInput.value.trim();
+
+                 if (!userId) {
+                     this.showNotification('Please select a user', 'error');
+                     return;
+                 }
+
+                 try {
+                     // Add participant
+                     const participantData = {
+                         userId: userId,
+                         name: userName,
+                         userName: userName,
+                         registeredAt: new Date().toISOString(),
+                         status: 'registered'
+                     };
+
+                     const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${this.selectedEvent.id}/participants/${userId}`);
+                     await window.firebaseDatabase.set(participantRef, participantData);
+                     
+                     this.showNotification('Participant added successfully', 'success');
+                     modal.remove();
+                     
+                     // Reload participants
+                     await this.loadParticipants(this.selectedEvent.id);
+                     
+                 } catch (error) {
+                     console.error('Error adding participant:', error);
+                     this.showNotification('Error adding participant', 'error');
+                 }
+             });
+
+         } catch (error) {
+             console.error('Error loading users:', error);
+             this.showNotification('Error loading user data', 'error');
+         }
      }
 }
 
