@@ -7,6 +7,32 @@ class OrdersManager {
         this.init();
     }
 
+	// Utility: normalize proof-of-payment input into a usable <img> src
+	// - Accepts: full data URLs, raw base64 payloads, or http(s) URLs
+	// - Returns: a string suitable for <img src>
+	convertToImageSrc(base64OrUrl) {
+		if (!base64OrUrl || typeof base64OrUrl !== 'string') return '';
+		const input = base64OrUrl.trim();
+		// Already a data URL
+		if (input.startsWith('data:image/')) return input;
+		// Is a URL
+		if (input.startsWith('http://') || input.startsWith('https://')) return input;
+		// Detect common base64 headers to infer mime
+		const formats = [
+			{ header: '/9j/', format: 'jpeg' }, // JPEG
+			{ header: 'iVBORw0KGgo', format: 'png' }, // PNG
+			{ header: 'R0lGOD', format: 'gif' }, // GIF
+			{ header: 'UklGR', format: 'webp' } // WEBP
+		];
+		for (const { header, format } of formats) {
+			if (input.startsWith(header)) {
+				return `data:image/${format};base64,${input}`;
+			}
+		}
+		// Fallback to PNG
+		return `data:image/png;base64,${input}`;
+	}
+
     init() {
         this.setupEventListeners();
         if (window.firebaseReady) {
@@ -229,18 +255,18 @@ class OrdersManager {
                 if (statusEl) statusEl.textContent = String(order.status || 'Pending');
                 if (paymentEl) paymentEl.textContent = String(order.paymentMethod || order.payment?.method || '—');
                 if (paymentStatusEl) paymentStatusEl.textContent = String(order.payment?.status || order.status || '—');
-                // Proof of payment (supports base64 or URL)
-                const proofRaw = order.payment?.proofBase64 || order.payment?.proof || order.paymentProofBase64 || order.paymentProofUrl || order.totals?.proofBase64 || order.totals?.proofUrl;
-                const proofSrc = proofRaw && /^data:image\//.test(proofRaw) ? proofRaw : (proofRaw ? String(proofRaw) : '');
-                if (proofWrap && proofImg && proofLink) {
-                    if (proofSrc) {
-                        proofImg.src = proofSrc;
-                        proofLink.href = proofSrc;
-                        proofWrap.style.display = '';
-                    } else {
-                        proofWrap.style.display = 'none';
-                    }
-                }
+				// Proof of payment (supports data URL, raw base64, or URL)
+				const proofRaw = order.payment?.proofBase64 || order.payment?.proof || order.paymentProofBase64 || order.paymentProofUrl || order.totals?.proofBase64 || order.totals?.proofUrl;
+				const proofSrc = this.convertToImageSrc(proofRaw || '');
+				if (proofWrap && proofImg && proofLink) {
+					if (proofSrc) {
+						proofImg.src = proofSrc;
+						proofLink.href = proofSrc;
+						proofWrap.style.display = '';
+					} else {
+						proofWrap.style.display = 'none';
+					}
+				}
 
                 // Populate items
                 const itemsWrap = formContainer.querySelector('.order-items');
