@@ -301,18 +301,29 @@ class OrdersManager {
                 if (shipContactEl) shipContactEl.textContent = ship.phone || ship.contact || order.userEmail || '—';
 
                 // Totals (fallbacks if not present on order)
-                const subtotalEl = formContainer.querySelector('.order-subtotal');
-                const taxEl = formContainer.querySelector('.order-tax');
-                const discountEl = formContainer.querySelector('.order-discount');
-                const totalEl = formContainer.querySelector('.order-total');
-                const subtotal = (order.items || []).reduce((sum, it) => sum + (Number(it.price || 0) * (Number(it.qty || it.quantity || 1))), 0);
-                const tax = Number(order.tax ?? order.totals?.tax ?? 0);
-                const discount = Number(order.discount ?? order.totals?.discount ?? 0);
-                const total = Number(order.total ?? order.totals?.total ?? (subtotal + tax - discount));
-                if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
-                if (taxEl) taxEl.textContent = `$${tax.toFixed(2)}`;
-                if (discountEl) discountEl.textContent = `$${discount.toFixed(2)}`;
-                if (totalEl) totalEl.innerHTML = `<strong>$${total.toFixed(2)}</strong>`;
+                const subtotalEls = formContainer.querySelectorAll('.order-subtotal');
+                const taxEls = formContainer.querySelectorAll('.order-tax');
+                const discountEls = formContainer.querySelectorAll('.order-discount');
+                const totalEls = formContainer.querySelectorAll('.order-total');
+                const subtotal = (order.items || []).reduce((sum, it) => {
+                    const unitPrice = Number(it.price ?? it.unitPrice ?? it.amount ?? 0);
+                    const quantity = Number(it.qty ?? it.quantity ?? 1);
+                    const lineTotal = Number(it.lineTotal ?? it.totalPrice ?? (unitPrice * quantity));
+                    // Prefer explicit lineTotal/totalPrice if present to avoid rounding drift
+                    return sum + (isNaN(lineTotal) ? (unitPrice * quantity) : lineTotal);
+                }, 0);
+                const tax = Number(order.tax ?? order.totals?.tax ?? order.totals?.taxAmount ?? 0);
+                const discount = Number(order.discount ?? order.totals?.discount ?? order.totals?.discountsTotal ?? 0);
+                const total = Number(
+                    order.total ??
+                    order.totals?.total ??
+                    order.totals?.grandTotal ??
+                    (subtotal + tax - discount)
+                );
+                subtotalEls.forEach(el => { el.textContent = `$${subtotal.toFixed(2)}`; });
+                taxEls.forEach(el => { el.textContent = `$${tax.toFixed(2)}`; });
+                discountEls.forEach(el => { el.textContent = `$${discount.toFixed(2)}`; });
+                totalEls.forEach(el => { el.innerHTML = `<strong>$${total.toFixed(2)}</strong>`; });
 
                 // Wire Close
                 const backBtn = formContainer.querySelector('.back-btn');

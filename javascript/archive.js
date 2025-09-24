@@ -150,10 +150,86 @@ class ArchiveManager {
     }
 
     previewArchivedProduct(item) {
-        // Minimal preview using alert; can be replaced with a modal if needed
-        const name = item.name || 'Unnamed Product';
-        const date = item.archivedAt || 'Unknown date';
-        this.showNotification(`Archived Product: ${name} (Archived: ${date})`, 'success');
+        // Ensure popup styles are present (reuse product/edit popup styles)
+        const hasPopupCss = document.querySelector('link[href$="/create-popup.css"], link[href$="create-popup.css"]');
+        if (!hasPopupCss) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '../css/create-popup.css';
+            document.head.appendChild(link);
+        }
+
+        const product = item.raw || {};
+
+        // Inject compact style for archived preview (once)
+        if (!document.querySelector('style[data-archived-preview-style]')) {
+            const style = document.createElement('style');
+            style.setAttribute('data-archived-preview-style', '');
+            style.textContent = `
+                .form-container.archived-preview { max-width: 720px; }
+                @media (max-width: 820px) { .form-container.archived-preview { max-width: 92vw; } }
+                .form-container.archived-preview .form-header h2 { font-size: 18px; }
+                .form-container.archived-preview .form-grid { gap: 14px; }
+                .form-container.archived-preview .form-group label { font-size: 12px; }
+                .form-container.archived-preview .form-group div { font-size: 14px; }
+                .form-container.archived-preview .upload-area img { max-height: 260px; }
+                .form-container.archived-preview .button-group { margin-top: 12px; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.addEventListener('click', (ev) => {
+            if (ev.target === overlay) {
+                if (overlay.parentNode) document.body.removeChild(overlay);
+                document.body.style.overflow = '';
+            }
+        });
+
+        const container = document.createElement('div');
+        container.className = 'form-container archived-preview';
+        container.innerHTML = `
+            <div class="form-header">
+                <h2><i class="fas fa-eye"></i> Archived Product Preview</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-column">
+                    <div class="form-group"><label>SKU</label><div>${product.sku || ''}</div></div>
+                    <div class="form-group"><label>Name</label><div>${product.productName || item.name || ''}</div></div>
+                    <div class="form-group"><label>Price</label><div>${product.price != null ? `$${Number(product.price).toFixed(2)}` : ''}</div></div>
+                    <div class="form-group"><label>Stock (at archive)</label><div>${product.stock != null ? product.stock : ''}</div></div>
+                </div>
+                <div class="form-column">
+                    <div class="form-group"><label>Category</label><div>${product.category || ''}</div></div>
+                    <div class="form-group"><label>Variant</label><div>${product.variant || ''}</div></div>
+                    <div class="form-group"><label>Image</label>
+                        <div class="upload-area" style="height:auto; border-style:solid;">
+                            ${product.image ? `<img alt="Product image" style="max-width:100%;height:auto;border-radius:8px;" src="data:image/jpeg;base64,${product.image}">` : '<span>No image</span>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="form-group"><label>Description</label><div style="white-space:pre-wrap">${product.description || ''}</div></div>
+            </div>
+            <div class="form-section">
+                <div class="form-group"><label>Archived At</label><div>${item.archivedAt ? new Date(item.archivedAt).toLocaleString() : ''}</div></div>
+            </div>
+            <div class="button-group">
+                <button class="back-btn" type="button"><i class="fas fa-times"></i> Close</button>
+            </div>
+        `;
+
+        const closeBtn = container.querySelector('.back-btn');
+        closeBtn.addEventListener('click', () => {
+            if (overlay.parentNode) document.body.removeChild(overlay);
+            document.body.style.overflow = '';
+        });
+
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
     }
 
     initSearch() {
