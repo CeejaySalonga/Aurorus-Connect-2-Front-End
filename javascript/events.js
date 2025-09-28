@@ -20,15 +20,71 @@ class EventManager {
     }
 
     async markParticipantPaid(eventId, userId) {
-        try {
-            const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants/${userId}`);
-            await window.firebaseDatabase.set(participantRef, 'Paid');
-            this.showNotification('Participant marked as Paid', 'success');
-            await this.loadParticipants(eventId);
-        } catch (error) {
-            console.error('Error marking participant paid:', error);
-            this.showNotification('Error marking participant paid', 'error');
-        }
+        this.showConfirmationModal(
+            'Mark as Paid',
+            'Are you sure you want to mark this participant as paid?',
+            'Mark as Paid',
+            async () => {
+                try {
+                    const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants/${userId}`);
+                    await window.firebaseDatabase.set(participantRef, 'Paid');
+                    this.showNotification('Participant marked as Paid', 'success');
+                    await this.loadParticipants(eventId);
+                } catch (error) {
+                    console.error('Error marking participant paid:', error);
+                    this.showNotification('Error marking participant paid', 'error');
+                }
+            }
+        );
+    }
+
+    // Show confirmation modal
+    showConfirmationModal(title, message, confirmText, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="form-container" style="width: 400px; max-width: 90%;">
+                <div class="form-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>
+                </div>
+                <div style="padding: 30px;">
+                    <p style="margin: 0 0 30px 0; font-size: 16px; color: #4a5568; line-height: 1.6; text-align: center;">${message}</p>
+                    <div class="form-actions" style="display: flex; gap: 16px; justify-content: center;">
+                        <button type="button" class="btn-secondary" id="cancelAction">Cancel</button>
+                        <button type="button" class="btn-primary" id="confirmAction">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Handle cancel action
+        document.getElementById('cancelAction').addEventListener('click', () => {
+            overlay.remove();
+        });
+        
+        // Handle confirm action
+        document.getElementById('confirmAction').addEventListener('click', () => {
+            overlay.remove();
+            onConfirm();
+        });
+        
+        // Handle overlay click
+        overlay.addEventListener('click', (ev) => {
+            if (ev.target === overlay) {
+                overlay.remove();
+            }
+        });
+        
+        // Handle escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
     }
 
     // Utility function to convert base64 to proper image source
@@ -804,6 +860,97 @@ class EventManager {
         URL.revokeObjectURL(url);
     }
 
+    async exportTournamentResults() {
+        try {
+            // Get the current event ID from the URL or stored state
+            const eventId = this.getCurrentEventId();
+            if (!eventId) {
+                this.showNotification('No event selected for export', 'error');
+                return;
+            }
+
+            // Get tournament results data
+            const resultsData = await this.getTournamentResults(eventId);
+            
+            if (!resultsData || resultsData.length === 0) {
+                this.showNotification('No results data available to export', 'info');
+                return;
+            }
+
+            // Create CSV content
+            const headers = ['Rank', 'Player Name', 'Score', 'Wins', 'Losses', 'Ties'];
+            const rows = resultsData.map((result, index) => [
+                index + 1,
+                result.playerName || 'Unknown',
+                result.score || 0,
+                result.wins || 0,
+                result.losses || 0,
+                result.ties || 0
+            ]);
+
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(field => `"${field}"`).join(','))
+                .join('\n');
+
+            // Generate filename with event name and date
+            const event = this.events.find(e => e.id === eventId);
+            const eventName = event ? event.eventName.replace(/[^a-zA-Z0-9]/g, '_') : 'Tournament';
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `${eventName}_Results_${date}.csv`;
+
+            this.downloadFile(csvContent, filename, 'text/csv');
+            this.showNotification('Tournament results exported successfully', 'success');
+        } catch (error) {
+            console.error('Error exporting tournament results:', error);
+            this.showNotification('Error exporting tournament results', 'error');
+        }
+    }
+
+    getCurrentEventId() {
+        // First try to get from stored selected event
+        if (this.selectedEvent && this.selectedEvent.id) {
+            return this.selectedEvent.id;
+        }
+        
+        // Try to get event ID from URL hash
+        const hash = window.location.hash;
+        if (hash && hash.includes('event=')) {
+            return hash.split('event=')[1].split('&')[0];
+        }
+        
+        // Fallback: get from the current tournament view
+        const tournamentHeader = document.querySelector('.tournament-header');
+        if (tournamentHeader) {
+            const eventTitle = tournamentHeader.querySelector('h2')?.textContent;
+            if (eventTitle) {
+                const event = this.events.find(e => e.eventName === eventTitle);
+                return event ? event.id : null;
+            }
+        }
+        
+        return null;
+    }
+
+    async getTournamentResults(eventId) {
+        try {
+            // Use the same logic as loadStandings to get current standings
+            const standings = await this.loadStandings(eventId);
+            
+            // Convert standings to the format expected by export
+            return standings.map(standing => ({
+                playerName: standing.name,
+                score: standing.points || 0,
+                wins: standing.wins || 0,
+                losses: standing.losses || 0,
+                ties: standing.ties || 0,
+                userId: standing.userId
+            }));
+        } catch (error) {
+            console.error('Error fetching tournament results:', error);
+            return [];
+        }
+    }
+
      showStatusUpdateModal(event) {
          fetch('update-status-popup.html', { cache: 'no-cache' })
             .then(response => response.text())
@@ -968,10 +1115,6 @@ class EventManager {
                          <i class="fas fa-random"></i>
                          Matchmaking
                      </button>
-                     <button class="tournament-tab" data-tab="rounds">
-                         <i class="fas fa-trophy"></i>
-                         Rounds
-                     </button>
                      <button class="tournament-tab" data-tab="results">
                          <i class="fas fa-medal"></i>
                          Results
@@ -982,13 +1125,28 @@ class EventManager {
                      <div class="tab-panel active" id="participants-panel">
                          <div class="participants-header">
                              <h3>Tournament Participants</h3>
-                             <button class="add-participant-btn">
-                                 <i class="fas fa-plus"></i>
-                                 Add Participant
-                             </button>
+                             <div class="participant-tabs">
+                                 <button class="participant-tab active" data-participant-tab="paid">
+                                     <i class="fas fa-check-circle"></i>
+                                     Paid Participants
+                                 </button>
+                                 <button class="participant-tab" data-participant-tab="pending">
+                                     <i class="fas fa-clock"></i>
+                                     Pending Participants
+                                 </button>
+                             </div>
                          </div>
-                         <div class="participants-list" id="participantsList">
-                             <!-- Participants will be loaded here -->
+                         <div class="participant-tab-content">
+                             <div class="participant-tab-panel active" id="paid-participants-panel">
+                                 <div class="participants-list" id="paidParticipantsList">
+                                     <!-- Paid participants will be loaded here -->
+                                 </div>
+                             </div>
+                             <div class="participant-tab-panel" id="pending-participants-panel">
+                                 <div class="participants-list" id="pendingParticipantsList">
+                                     <!-- Pending participants will be loaded here -->
+                                 </div>
+                             </div>
                          </div>
                      </div>
 
@@ -1067,11 +1225,43 @@ class EventManager {
              });
          });
 
-         // Setup add participant button
-         const addParticipantBtns = document.querySelectorAll('.add-participant-btn');
-         addParticipantBtns.forEach(btn => {
-             btn.addEventListener('click', () => {
-                 this.showAddParticipantModal();
+         // Setup participant tabs
+         this.setupParticipantTabs();
+
+        // Setup add participant button
+        const addParticipantBtns = document.querySelectorAll('.add-participant-btn');
+        addParticipantBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.showAddParticipantModal();
+            });
+        });
+
+        // Setup export results button
+        const exportResultsBtn = document.querySelector('.export-results-btn');
+        if (exportResultsBtn) {
+            exportResultsBtn.addEventListener('click', () => {
+                this.exportTournamentResults();
+            });
+        }
+    }
+
+     setupParticipantTabs() {
+         const participantTabs = document.querySelectorAll('.participant-tab');
+         const participantPanels = document.querySelectorAll('.participant-tab-panel');
+
+         participantTabs.forEach(tab => {
+             tab.addEventListener('click', () => {
+                 // Remove active class from all participant tabs and panels
+                 participantTabs.forEach(t => t.classList.remove('active'));
+                 participantPanels.forEach(p => p.classList.remove('active'));
+
+                 // Add active class to clicked tab and corresponding panel
+                 tab.classList.add('active');
+                 const tabType = tab.dataset.participantTab;
+                 const panel = document.getElementById(`${tabType}-participants-panel`);
+                 if (panel) {
+                     panel.classList.add('active');
+                 }
              });
          });
      }
@@ -1089,6 +1279,9 @@ class EventManager {
              
              // Load results data
              await this.loadResultsData(event.id);
+             
+             // Update dashboard with accurate round count
+             await this.updateDashboardRoundCount(event.id);
          } catch (error) {
              console.error('Error loading tournament data:', error);
              this.showNotification('Error loading tournament data', 'error');
@@ -1102,18 +1295,22 @@ class EventManager {
              const snapshot = await window.firebaseDatabase.get(participantsRef);
              const participants = snapshot.val() || {};
 
-             const participantsList = document.getElementById('participantsList');
-             if (!participantsList) return;
+             const paidParticipantsList = document.getElementById('paidParticipantsList');
+             const pendingParticipantsList = document.getElementById('pendingParticipantsList');
+             
+             if (!paidParticipantsList || !pendingParticipantsList) return;
 
              if (Object.keys(participants).length === 0) {
-                 participantsList.innerHTML = `
+                 paidParticipantsList.innerHTML = `
                      <div class="no-participants">
                          <i class="fas fa-users"></i>
-                         <p>No participants registered yet</p>
-                         <button class="add-participant-btn">
-                             <i class="fas fa-plus"></i>
-                             Add First Participant
-                         </button>
+                         <p>No paid participants yet</p>
+                     </div>
+                 `;
+                 pendingParticipantsList.innerHTML = `
+                     <div class="no-participants">
+                         <i class="fas fa-users"></i>
+                         <p>No pending participants yet</p>
                      </div>
                  `;
                  return;
@@ -1139,7 +1336,35 @@ class EventManager {
                  userMapSize: Object.keys(userMap).length
              });
 
-           participantsList.innerHTML = Object.entries(participants).map(([id, participant]) => {
+             // Separate participants into paid and pending
+             const paidParticipants = [];
+             const pendingParticipants = [];
+
+             Object.entries(participants).forEach(([id, participant]) => {
+                 const isPaid = this.isPaidValue(participant);
+                 const participantData = {
+                     id,
+                     participant,
+                     isPaid
+                 };
+                 
+                 if (isPaid) {
+                     paidParticipants.push(participantData);
+                 } else {
+                     pendingParticipants.push(participantData);
+                 }
+             });
+
+             // Render paid participants
+             if (paidParticipants.length === 0) {
+                 paidParticipantsList.innerHTML = `
+                     <div class="no-participants">
+                         <i class="fas fa-check-circle"></i>
+                         <p>No paid participants yet</p>
+                     </div>
+                 `;
+             } else {
+                 paidParticipantsList.innerHTML = paidParticipants.map(({id, participant}) => {
                const isPaid = this.isPaidValue(participant);
                const userId = typeof participant === 'string' ? id : (participant.userId || id);
                 const userData = userMap[userId];
@@ -1173,16 +1398,12 @@ class EventManager {
                                  }
                              </div>
                              <div class="participant-details">
-                                <h4>${displayName}</h4>
-                                 <p>ID: ${userId}</p>
+                                <h4>${displayName}</h4>                               
                                  ${userEmail ? `<p>Email: ${userEmail}</p>` : ''}
                                 <p>Payment: <span class="status-badge ${isPaid ? 'status-active' : 'status-inactive'}">${isPaid ? 'Paid' : 'Unpaid'}</span></p>
                              </div>
                          </div>
                          <div class="participant-actions">
-                             <button class="edit-participant-btn" title="Edit" onclick="window.eventManager.editParticipant('${eventId}', '${id}')">
-                                 <i class="fas fa-edit"></i>
-                             </button>
                              <button class="remove-participant-btn" title="Remove" onclick="window.eventManager.removeParticipant('${eventId}', '${id}')">
                                  <i class="fas fa-trash"></i>
                              </button>
@@ -1190,7 +1411,57 @@ class EventManager {
                          </div>
                      </div>
                  `;
-             }).join('');
+                 }).join('');
+             }
+
+             // Render pending participants
+             if (pendingParticipants.length === 0) {
+                 pendingParticipantsList.innerHTML = `
+                     <div class="no-participants">
+                         <i class="fas fa-clock"></i>
+                         <p>No pending participants yet</p>
+                     </div>
+                 `;
+             } else {
+                 pendingParticipantsList.innerHTML = pendingParticipants.map(({id, participant}) => {
+                     const isPaid = this.isPaidValue(participant);
+                     const userId = typeof participant === 'string' ? id : (participant.userId || id);
+                     const userData = userMap[userId];
+                     
+                     // Use user data from users table if available, fallback to participant data
+                     const displayName = userData?.userName || userData?.name || (typeof participant === 'object' && (participant.name || participant.userName)) || 'Unknown Player';
+                     const userEmail = userData?.email || '';
+                     const profilePicture = userData?.profilePicture || userData?.profileImage || userData?.avatar || '';
+
+                     // Convert base64 to proper image source using utility function
+                     const imageSrc = this.convertToImageSrc(profilePicture);
+
+                     return `
+                         <div class="participant-card">
+                             <div class="participant-info">
+                                 <div class="participant-avatar">
+                                     ${imageSrc ? 
+                                         `<img src="${imageSrc}" alt="${displayName}" class="participant-profile-img" onerror="console.log('Image failed to load for ${displayName}'); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                          <i class="fas fa-user" style="display: none;"></i>` :
+                                         `<i class="fas fa-user"></i>`
+                                     }
+                                 </div>
+                                 <div class="participant-details">
+                                    <h4>${displayName}</h4>                               
+                                     ${userEmail ? `<p>Email: ${userEmail}</p>` : ''}
+                                    <p>Payment: <span class="status-badge ${isPaid ? 'status-active' : 'status-inactive'}">${isPaid ? 'Paid' : 'Unpaid'}</span></p>
+                                 </div>
+                             </div>
+                             <div class="participant-actions">
+                                 <button class="remove-participant-btn" title="Remove" onclick="window.eventManager.removeParticipant('${eventId}', '${id}')">
+                                     <i class="fas fa-trash"></i>
+                                 </button>
+                                ${!isPaid ? `<button class=\"mark-paid-btn\" title=\"Mark as Paid\" onclick=\"window.eventManager.markParticipantPaid('${eventId}','${userId}')\"><i class=\"fas fa-check\"></i></button>` : ''}
+                             </div>
+                         </div>
+                     `;
+                 }).join('');
+             }
 
              // Update participant count in dashboard
              const participantCountEl = document.getElementById('participantCount');
@@ -1216,11 +1487,7 @@ class EventManager {
                 bracketContainer.innerHTML = `
                     <div class="no-tournament">
                         <i class="fas fa-trophy"></i>
-                        <p>No Swiss tournament started yet</p>
-                        <button class="start-swiss-btn" onclick="window.eventManager.startSwissTournament('${eventId}')">
-                            <i class="fas fa-play"></i>
-                            Start Swiss Tournament
-                        </button>
+                        <p>No tournament started yet</p>
                     </div>
                 `;
                 return;
@@ -1337,7 +1604,7 @@ class EventManager {
                     <div class="no-results">
                         <i class="fas fa-medal"></i>
                         <p>No tournament started yet</p>
-                        <p>Standings will appear here once a Swiss tournament is started</p>
+                        <p>Standings will appear here once the tournament is started</p>
                     </div>
                 `;
                 return;
@@ -1462,12 +1729,56 @@ class EventManager {
                      <span class="status-label">Location:</span>
                      <span class="status-value">${event.location || 'TBD'}</span>
                  </div>
-                 <div class="status-item">
-                     <span class="status-label">Capacity:</span>
-                     <span class="status-value">${event.capacity || 'Unlimited'}</span>
-                 </div>
              </div>
          `;
+     }
+
+     async updateDashboardRoundCount(eventId) {
+         try {
+             // Get rounds data from TBL_MATCHES
+             const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+             const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+             const roundsRoot = roundsRootSnap.val() || {};
+             const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+             
+             // Get participants to calculate total rounds
+             const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+             const participantsSnap = await window.firebaseDatabase.get(participantsRef);
+             const participants = participantsSnap.val() || {};
+             const paidCount = Object.values(participants).filter(v => this.isPaidValue(v)).length;
+             
+             // Calculate current round and total rounds
+             const currentRound = roundKeys.length > 0 ? Math.max(...roundKeys.map(k => parseInt(k.replace('ROUND_', ''), 10))) : 0;
+             const swiss = new window.SwissMatchmaker();
+             const totalRounds = swiss.calculateRounds(paidCount || 0);
+             
+             // Update round count display
+             const roundCountEl = document.getElementById('roundCount');
+             if (roundCountEl) {
+                 if (currentRound === 0) {
+                     roundCountEl.textContent = `0/${totalRounds}`;
+                 } else {
+                     roundCountEl.textContent = `${currentRound}/${totalRounds}`;
+                 }
+             }
+             
+             // Update match count
+             let totalMatches = 0;
+             roundKeys.forEach(roundKey => {
+                 const roundData = roundsRoot[roundKey];
+                 if (roundData) {
+                     totalMatches += Object.keys(roundData).length;
+                 }
+             });
+             
+             const matchCountEl = document.getElementById('matchCount');
+             if (matchCountEl) {
+                 matchCountEl.textContent = totalMatches;
+             }
+             
+         } catch (error) {
+             console.error('Error updating dashboard round count:', error);
+         }
      }
 
      showEventsList() {
@@ -1545,24 +1856,29 @@ class EventManager {
          this.showNotification('Edit participant functionality coming soon', 'info');
      }
 
-     async removeParticipant(eventId, participantId) {
-         if (confirm('Are you sure you want to remove this participant from the event?')) {
-             try {
-                 const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants/${participantId}`);
-                 await window.firebaseDatabase.remove(participantRef);
-                 
-                 this.showNotification('Participant removed successfully', 'success');
-                 
-                 // Reload participants for the current event
-                 if (this.selectedEvent && this.selectedEvent.id === eventId) {
-                     await this.loadParticipants(eventId);
-                 }
-             } catch (error) {
-                 console.error('Error removing participant:', error);
-                 this.showNotification('Error removing participant', 'error');
-             }
-         }
-     }
+    async removeParticipant(eventId, participantId) {
+        this.showConfirmationModal(
+            'Remove Participant',
+            'Are you sure you want to remove this participant from the event?',
+            'Remove',
+            async () => {
+                try {
+                    const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants/${participantId}`);
+                    await window.firebaseDatabase.remove(participantRef);
+                    
+                    this.showNotification('Participant removed successfully', 'success');
+                    
+                    // Reload participants for the current event
+                    if (this.selectedEvent && this.selectedEvent.id === eventId) {
+                        await this.loadParticipants(eventId);
+                    }
+                } catch (error) {
+                    console.error('Error removing participant:', error);
+                    this.showNotification('Error removing participant', 'error');
+                }
+            }
+        );
+    }
 
      async showAddParticipantModal() {
          if (!this.selectedEvent) {
@@ -1801,6 +2117,9 @@ class EventManager {
 
             this.showNotification(`Swiss tournament started with ${paidParticipants.length} paid participants (${totalRounds} rounds)`, 'success');
             
+            // Update dashboard with new round count
+            await this.updateDashboardRoundCount(eventId);
+            
             // Reload tournament data to show the new matches
             await this.loadTournamentData({ id: eventId });
 
@@ -1962,6 +2281,9 @@ class EventManager {
             } else {
                 this.showNotification(`Round ${nextRound} generated successfully`, 'success');
             }
+            
+            // Update dashboard with new round count
+            await this.updateDashboardRoundCount(eventId);
 
             // Reload tournament data
             await this.loadTournamentData({ id: eventId });
@@ -2060,7 +2382,7 @@ class EventManager {
                                             ${match.player1Profile ? `<img src="${match.player1Profile}" alt="${match.player1Name}" class="player-avatar" onerror="this.style.display='none'">` : ''}
                                             <span class="player-name">${match.player1Name}</span>
                                         </div>
-                                        <span class="bye-badge">BYE</span>
+                                        <span class="bye-badge">BYE ROUND</span>
                                     </div>
                                 </div>
                                 <div class="match-status completed">

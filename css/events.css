@@ -333,16 +333,6 @@
     left: 100%;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
 
 .btn-secondary {
     background-color: #6c757d;
@@ -749,6 +739,58 @@
     border-bottom: 1px solid #e9ecef;
 }
 
+.participants-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.participant-tabs {
+    display: flex;
+    gap: 8px;
+    width: auto;
+}
+
+.participant-tab {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.participant-tab:hover {
+    background-color: #e9ecef;
+    color: #495057;
+    border-color: #adb5bd;
+}
+
+.participant-tab.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.participant-tab-content {
+    position: relative;
+}
+
+.participant-tab-panel {
+    display: none;
+}
+
+.participant-tab-panel.active {
+    display: block;
+}
+
 .participants-header h3,
 .matchmaking-header h3,
 .rounds-header h3,
@@ -795,6 +837,13 @@
     padding-right: 8px;
 }
 
+.participants-list:has(.no-participants) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
 .participant-card {
     background: white;
     border: 1px solid #e9ecef;
@@ -817,6 +866,7 @@
     align-items: center;
     gap: 12px;
     flex: 1;
+    min-width: 0;
 }
 
 .participant-avatar {
@@ -831,13 +881,22 @@
     font-size: 20px;
     overflow: hidden;
     position: relative;
+    flex-shrink: 0;
 }
 
 .participant-profile-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     border-radius: 50%;
+    display: block;
+}
+
+.participant-details {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .participant-details h4 {
@@ -845,6 +904,10 @@
     font-size: 16px;
     font-weight: 600;
     color: #2d3748;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .participant-details p {
@@ -852,6 +915,10 @@
     font-size: 14px;
     color: #6c757d;
     line-height: 1.4;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .participant-actions {
@@ -862,7 +929,8 @@
 }
 
 .edit-participant-btn,
-.remove-participant-btn {
+.remove-participant-btn,
+.mark-paid-btn {
     width: 36px;
     height: 36px;
     border: none;
@@ -892,20 +960,36 @@
     background-color: #c82333;
 }
 
+.mark-paid-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.mark-paid-btn:hover {
+    background-color: #218838;
+}
+
 /* Empty States */
 .no-participants,
 .no-bracket,
 .no-rounds,
-.no-results {
+.no-results,
+.no-tournament {
     text-align: center;
     padding: 60px 20px;
     color: #6c757d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
 }
 
 .no-participants i,
 .no-bracket i,
 .no-rounds i,
-.no-results i {
+.no-results i,
+.no-tournament i {
     font-size: 48px;
     margin-bottom: 16px;
     color: #dee2e6;
@@ -914,7 +998,8 @@
 .no-participants p,
 .no-bracket p,
 .no-rounds p,
-.no-results p {
+.no-results p,
+.no-tournament p {
     font-size: 16px;
     margin-bottom: 24px;
 }
@@ -1120,7 +1205,6 @@
 }
 
 .status-item {
-    display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
