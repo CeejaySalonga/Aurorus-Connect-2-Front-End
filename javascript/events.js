@@ -6,6 +6,31 @@ class EventManager {
         this.init();
     }
 
+    // Unified paid validation: supports string 'Paid' (any case, trimmed)
+    // and legacy object formats { paid: true } or { status: 'Paid' }
+    isPaidValue(value) {
+        if (typeof value === 'string') {
+            return value.trim().toLowerCase() === 'paid';
+        }
+        if (value && typeof value === 'object') {
+            if (value.paid === true) return true;
+            if (typeof value.status === 'string' && value.status.trim().toLowerCase() === 'paid') return true;
+        }
+        return false;
+    }
+
+    async markParticipantPaid(eventId, userId) {
+        try {
+            const participantRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants/${userId}`);
+            await window.firebaseDatabase.set(participantRef, 'Paid');
+            this.showNotification('Participant marked as Paid', 'success');
+            await this.loadParticipants(eventId);
+        } catch (error) {
+            console.error('Error marking participant paid:', error);
+            this.showNotification('Error marking participant paid', 'error');
+        }
+    }
+
     // Utility function to convert base64 to proper image source
     convertToImageSrc(base64Data) {
         if (!base64Data) return '';
@@ -967,18 +992,24 @@ class EventManager {
                          </div>
                      </div>
 
-                     <div class="tab-panel" id="matchmaking-panel">
-                         <div class="matchmaking-header">
-                             <h3>Tournament Bracket</h3>
-                             <button class="generate-bracket-btn">
-                                 <i class="fas fa-magic"></i>
-                                 Generate Bracket
-                             </button>
-                         </div>
-                         <div class="bracket-container" id="bracketContainer">
-                             <!-- Tournament bracket will be displayed here -->
-                         </div>
-                     </div>
+                    <div class="tab-panel" id="matchmaking-panel">
+                        <div class="matchmaking-header">
+                            <h3>Swiss Tournament</h3>
+                            <div class="tournament-actions">
+                                <button class="btn-primary" onclick="window.eventManager.startSwissTournament('${event.id}')">
+                                    <i class="fas fa-play"></i>
+                                    Start Swiss Tournament
+                                </button>
+                                <button class="btn-secondary" onclick="window.eventManager.generateNextRound('${event.id}')">
+                                    <i class="fas fa-forward"></i>
+                                    Next Round
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bracket-container" id="bracketContainer">
+                            <!-- Tournament matches will be displayed here -->
+                        </div>
+                    </div>
 
                      <div class="tab-panel" id="rounds-panel">
                          <div class="rounds-header">
@@ -1108,14 +1139,15 @@ class EventManager {
                  userMapSize: Object.keys(userMap).length
              });
 
-             participantsList.innerHTML = Object.entries(participants).map(([id, participant]) => {
-                 const userId = participant.userId || id;
-                 const userData = userMap[userId];
-                 
-                 // Use user data from users table if available, fallback to participant data
-                 const displayName = userData?.userName || userData?.name || participant.name || participant.userName || 'Unknown Player';
-                 const userEmail = userData?.email || '';
-                 const profilePicture = userData?.profilePicture || userData?.profileImage || userData?.avatar || '';
+           participantsList.innerHTML = Object.entries(participants).map(([id, participant]) => {
+               const isPaid = this.isPaidValue(participant);
+               const userId = typeof participant === 'string' ? id : (participant.userId || id);
+                const userData = userMap[userId];
+                
+                // Use user data from users table if available, fallback to participant data
+               const displayName = userData?.userName || userData?.name || (typeof participant === 'object' && (participant.name || participant.userName)) || 'Unknown Player';
+                const userEmail = userData?.email || '';
+                const profilePicture = userData?.profilePicture || userData?.profileImage || userData?.avatar || '';
 
                  // Debug: Log profile picture data
                  if (profilePicture) {
@@ -1130,7 +1162,7 @@ class EventManager {
                  // Convert base64 to proper image source using utility function
                  const imageSrc = this.convertToImageSrc(profilePicture);
 
-                 return `
+                return `
                      <div class="participant-card">
                          <div class="participant-info">
                              <div class="participant-avatar">
@@ -1141,11 +1173,10 @@ class EventManager {
                                  }
                              </div>
                              <div class="participant-details">
-                                 <h4>${displayName}</h4>
+                                <h4>${displayName}</h4>
                                  <p>ID: ${userId}</p>
                                  ${userEmail ? `<p>Email: ${userEmail}</p>` : ''}
-                                 <p>Registered: ${participant.registeredAt ? new Date(participant.registeredAt).toLocaleDateString() : 'Unknown'}</p>
-                                 ${participant.status ? `<p>Status: <span class="status-badge status-${participant.status}">${participant.status.charAt(0).toUpperCase() + participant.status.slice(1)}</span></p>` : ''}
+                                <p>Payment: <span class="status-badge ${isPaid ? 'status-active' : 'status-inactive'}">${isPaid ? 'Paid' : 'Unpaid'}</span></p>
                              </div>
                          </div>
                          <div class="participant-actions">
@@ -1155,6 +1186,7 @@ class EventManager {
                              <button class="remove-participant-btn" title="Remove" onclick="window.eventManager.removeParticipant('${eventId}', '${id}')">
                                  <i class="fas fa-trash"></i>
                              </button>
+                            ${!isPaid ? `<button class=\"mark-paid-btn\" title=\"Mark as Paid\" onclick=\"window.eventManager.markParticipantPaid('${eventId}','${userId}')\"><i class=\"fas fa-check\"></i></button>` : ''}
                          </div>
                      </div>
                  `;
@@ -1171,35 +1203,77 @@ class EventManager {
          }
      }
 
-     async loadMatchmakingData(eventId) {
-         try {
-             const bracketRef = window.firebaseDatabase.ref(window.database, `TBL_TOURNAMENT_BRACKETS/${eventId}`);
-             const snapshot = await window.firebaseDatabase.get(bracketRef);
-             const bracketData = snapshot.val();
+    async loadMatchmakingData(eventId) {
+        try {
+            // Derive rounds and render
+            const bracketContainer = document.getElementById('bracketContainer');
+            if (!bracketContainer) return;
+            const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+            const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+            const roundsRoot = roundsRootSnap.val() || {};
+            const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            if (roundKeys.length === 0) {
+                bracketContainer.innerHTML = `
+                    <div class="no-tournament">
+                        <i class="fas fa-trophy"></i>
+                        <p>No Swiss tournament started yet</p>
+                        <button class="start-swiss-btn" onclick="window.eventManager.startSwissTournament('${eventId}')">
+                            <i class="fas fa-play"></i>
+                            Start Swiss Tournament
+                        </button>
+                    </div>
+                `;
+                return;
+            }
 
-             const bracketContainer = document.getElementById('bracketContainer');
-             if (!bracketContainer) return;
+            // Get all matches from all rounds
+            const matchesByRound = {};
+            const totalRounds = Math.max(...roundKeys.map(k => parseInt(k.split('_')[1], 10)));
+            
+            for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+                const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${roundNum}`);
+                const roundSnapshot = await window.firebaseDatabase.get(roundRef);
+                const roundMatches = roundSnapshot.val() || {};
+                
+                if (Object.keys(roundMatches).length > 0) {
+                    matchesByRound[roundNum] = Object.entries(roundMatches).map(([matchId, match]) => ({
+                        matchId: matchId,
+                        round: roundNum,
+                        player1: match.Player1,
+                        player2: match.Player2,
+                        player1Name: match.Player1Name || 'Unknown',
+                        player2Name: match.Player2Name || 'Unknown',
+                        player1Profile: match.Player1Profile || '',
+                        player2Profile: match.Player2Profile || '',
+                        winner: match.Winner,
+                        status: match.Winner === "undecided" ? 'pending' : 'completed',
+                        result: match.Winner === "undecided" ? null :
+                                (match.Player2 == null ? 'bye' :
+                                 (match.Winner === match.Player1 ? 'player1' :
+                                  match.Winner === match.Player2 ? 'player2' : 'bye'))
+                    }));
+                }
+            }
 
-             if (!bracketData) {
-                 bracketContainer.innerHTML = `
-                     <div class="no-bracket">
-                         <i class="fas fa-random"></i>
-                         <p>No bracket generated yet</p>
-                         <button class="generate-bracket-btn">
-                             <i class="fas fa-magic"></i>
-                             Generate Bracket
-                         </button>
-                     </div>
-                 `;
-                 return;
-             }
+            // Render tournament matches
+            const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnap = await window.firebaseDatabase.get(participantsRef);
+            const participantsMap = participantsSnap.val() || {};
+            // New paid rule with legacy tolerance
+            const paidCount = Object.values(participantsMap).filter(v => this.isPaidValue(v)).length;
+            const swiss = new window.SwissMatchmaker();
+            const tournament = {
+                status: 'active',
+                currentRound: totalRounds,
+                totalRounds: swiss.calculateRounds(paidCount)
+            };
+            bracketContainer.innerHTML = this.renderSwissMatches(tournament, matchesByRound);
 
-             // Render bracket visualization
-             bracketContainer.innerHTML = this.renderBracket(bracketData);
-         } catch (error) {
-             console.error('Error loading matchmaking data:', error);
-         }
-     }
+        } catch (error) {
+            console.error('Error loading matchmaking data:', error);
+            this.showNotification('Error loading matchmaking data', 'error');
+        }
+    }
 
      async loadRoundsData(eventId) {
          try {
@@ -1249,32 +1323,75 @@ class EventManager {
          }
      }
 
-     async loadResultsData(eventId) {
-         try {
-             const resultsRef = window.firebaseDatabase.ref(window.database, `TBL_TOURNAMENT_RESULTS/${eventId}`);
-             const snapshot = await window.firebaseDatabase.get(resultsRef);
-             const results = snapshot.val();
+    async loadResultsData(eventId) {
+        try {
+            // Derive tournament info from ROUND_* nodes
+            const resultsContainer = document.getElementById('resultsContainer');
+            if (!resultsContainer) return;
+            const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+            const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+            const roundsRoot = roundsRootSnap.val() || {};
+            const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            if (roundKeys.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-medal"></i>
+                        <p>No tournament started yet</p>
+                        <p>Standings will appear here once a Swiss tournament is started</p>
+                    </div>
+                `;
+                return;
+            }
 
-             const resultsContainer = document.getElementById('resultsContainer');
-             if (!resultsContainer) return;
+            // Figure out current round and total rounds expected
+            const currentRound = Math.max(...roundKeys.map(k => parseInt(k.replace('ROUND_', ''), 10)));
+            const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnap = await window.firebaseDatabase.get(participantsRef);
+            const participants = participantsSnap.val() || {};
+            const paidCount = Object.values(participants).filter(v => this.isPaidValue(v)).length;
+            const swiss = new window.SwissMatchmaker();
+            const totalRounds = swiss.calculateRounds(paidCount || 0);
 
-             if (!results) {
-                 resultsContainer.innerHTML = `
-                     <div class="no-results">
-                         <i class="fas fa-medal"></i>
-                         <p>No results available yet</p>
-                         <p>Results will appear here once the tournament is completed</p>
-                     </div>
-                 `;
-                 return;
-             }
+            // Load standings
+            const standings = await this.loadStandings(eventId);
 
-             // Render results
-             resultsContainer.innerHTML = this.renderResults(results);
-         } catch (error) {
-             console.error('Error loading results data:', error);
-         }
-     }
+            // Determine if tournament is complete: all rounds generated up to totalRounds and all matches decided
+            let allRoundsDecided = true;
+            for (let r = 1; r <= Math.min(currentRound, totalRounds || currentRound); r++) {
+                const rRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${r}`);
+                const rSnap = await window.firebaseDatabase.get(rRef);
+                const rMatches = rSnap.val() || {};
+                const matchesArr = Object.values(rMatches);
+                if (matchesArr.length === 0) { allRoundsDecided = false; break; }
+                const undecided = matchesArr.some(m => !m || m.Winner === undefined || m.Winner === null || m.Winner === 'undecided');
+                if (undecided) { allRoundsDecided = false; break; }
+            }
+
+            const tournament = {
+                status: allRoundsDecided && currentRound >= (totalRounds || 1) ? 'completed' : 'ongoing',
+                currentRound,
+                totalRounds: totalRounds || currentRound
+            };
+
+            if (standings.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-medal"></i>
+                        <p>No standings available yet</p>
+                        <p>Standings will appear here once matches are played</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Always show full standings table with records
+            resultsContainer.innerHTML = this.renderStandings(standings, tournament);
+
+        } catch (error) {
+            console.error('Error loading results data:', error);
+            this.showNotification('Error loading results data', 'error');
+        }
+    }
 
      renderBracket(bracketData) {
          // Simple bracket visualization
@@ -1575,11 +1692,479 @@ class EventManager {
                  }
              });
 
-         } catch (error) {
-             console.error('Error loading users:', error);
-             this.showNotification('Error loading user data', 'error');
-         }
-     }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            this.showNotification('Error loading user data', 'error');
+        }
+    }
+
+    // Swiss Tournament Methods
+    async startSwissTournament(eventId) {
+        try {
+            // Get paid participants
+            const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnapshot = await window.firebaseDatabase.get(participantsRef);
+            const participants = participantsSnapshot.val() || {};
+
+            // Load users upfront for name lookup
+            const usersRefForNames = window.firebaseDatabase.ref(window.database, 'users');
+            const usersSnapForNames = await window.firebaseDatabase.get(usersRefForNames);
+            const usersForNames = usersSnapForNames.val() || {};
+
+            // Paid rule: use unified helper (case-insensitive, legacy tolerant)
+            const paidParticipants = Object.entries(participants)
+                .filter(([uid, p]) => this.isPaidValue(p))
+                .map(([id]) => ({
+                    userId: id,
+                    name: (usersForNames[id]?.userName || usersForNames[id]?.name || 'Unknown'),
+                    paid: true
+                }));
+
+            console.log('[Swiss] Participants snapshot:', participants);
+            console.log('[Swiss] Computed paidParticipants:', paidParticipants.map(p => p.userId));
+
+            if (paidParticipants.length < 2) {
+                this.showNotification(`Minimum 2 paid participants required (found ${paidParticipants.length}). Ensure participant values are 'Paid'.`, 'error');
+                return;
+            }
+
+            // Initialize Swiss matchmaker
+            const swissMatchmaker = new window.SwissMatchmaker();
+            const totalRounds = swissMatchmaker.calculateRounds(paidParticipants.length);
+
+            // Generate first round pairings using seed order (all at 0 points are equal)
+            // All players start at 0 points; Swiss generator will handle equal groupings
+            const pairings = swissMatchmaker.generatePairings(paidParticipants, 1, []);
+
+            // No tournament meta node per DB structure. Rounds will be derived from ROUND_* nodes.
+
+            // Save first round matches
+            const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_1`);
+            const matchPromises = [];
+
+            // Get user data for names and profile pictures
+            const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+            const usersSnapshot = await window.firebaseDatabase.get(usersRef);
+            const users = usersSnapshot.val() || {};
+
+            // Save regular matches
+            pairings.matches.forEach((match, index) => {
+                const safeIndex = String(index).replace(/[^0-9]/g, '');
+                const matchId = `match_${Date.now()}_${safeIndex}`;
+                const matchRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_1/${matchId}`);
+                
+                const player1Data = users[match.player1] || {};
+                const player2Data = users[match.player2] || {};
+                
+                matchPromises.push(
+                    window.firebaseDatabase.set(matchRef, {
+                        Player1: match.player1,
+                        Player2: match.player2,
+                        Player1Name: player1Data.userName || player1Data.name || 'Unknown',
+                        Player2Name: player2Data.userName || player2Data.name || 'Unknown',
+                        Player1Profile: player1Data.profilePicture || player1Data.profileImage || player1Data.avatar || '',
+                        Player2Profile: player2Data.profilePicture || player2Data.profileImage || player2Data.avatar || '',
+                        Winner: "undecided"
+                    })
+                );
+            });
+
+            // Save bye matches
+            pairings.byes.forEach((userId, index) => {
+                const safeIndex = String(index).replace(/[^0-9]/g, '');
+                const matchId = `bye_${Date.now()}_${safeIndex}`;
+                const matchRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_1/${matchId}`);
+                
+                const playerData = users[userId] || {};
+                
+                matchPromises.push(
+                    window.firebaseDatabase.set(matchRef, {
+                        Player1: userId,
+                        Player1Name: playerData.userName || playerData.name || 'Unknown',
+                        Player1Profile: playerData.profilePicture || playerData.profileImage || playerData.avatar || '',
+                        Player2: null,
+                        Winner: userId // Bye winner is the player who got the bye
+                    })
+                );
+            });
+
+            await Promise.all(matchPromises);
+
+            // Save initial standings (all players start with 0 points)
+            const standingsRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/STANDINGS`);
+            const initialStandings = {};
+            paidParticipants.forEach(participant => {
+                const userId = participant.userId || participant.id;
+                initialStandings[userId] = 0;
+            });
+            await window.firebaseDatabase.set(standingsRef, initialStandings);
+
+            this.showNotification(`Swiss tournament started with ${paidParticipants.length} paid participants (${totalRounds} rounds)`, 'success');
+            
+            // Reload tournament data to show the new matches
+            await this.loadTournamentData({ id: eventId });
+
+        } catch (error) {
+            console.error('Error starting Swiss tournament:', error);
+            this.showNotification('Error starting Swiss tournament', 'error');
+        }
+    }
+
+    async generateNextRound(eventId) {
+        try {
+            // Derive current round from existing ROUND_* nodes
+            const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+            const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+            const roundsRoot = roundsRootSnap.val() || {};
+            const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            const currentRound = roundKeys.length > 0 ? Math.max(...roundKeys.map(k => parseInt(k.split('_')[1], 10))) : 0;
+            if (currentRound === 0) {
+                this.showNotification('No rounds found. Start tournament first.', 'error');
+                return;
+            }
+            // Estimate total rounds using participant count
+            const participantsRefForRounds = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnapForRounds = await window.firebaseDatabase.get(participantsRefForRounds);
+            const participantsMapForRounds = participantsSnapForRounds.val() || {};
+            const paidForRounds = Object.values(participantsMapForRounds).filter(v => this.isPaidValue(v));
+            const totalRounds = new window.SwissMatchmaker().calculateRounds(paidForRounds.length);
+
+            if (currentRound >= totalRounds) {
+                this.showNotification('Tournament is already complete', 'error');
+                return;
+            }
+
+            // Check if current round is complete (all matches have winners)
+            const currentRoundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${currentRound}`);
+            const currentRoundSnapshot = await window.firebaseDatabase.get(currentRoundRef);
+            const currentRoundMatches = currentRoundSnapshot.val() || {};
+
+            // Check if all matches are completed (no "undecided" winners)
+            const incompleteMatches = Object.values(currentRoundMatches).filter(match => 
+                match.Winner === "undecided" || match.Winner === null || match.Winner === undefined
+            );
+
+            if (incompleteMatches.length > 0) {
+                this.showNotification(`Round ${currentRound} is not complete. ${incompleteMatches.length} matches still undecided.`, 'error');
+                return;
+            }
+
+            const nextRound = currentRound + 1;
+
+            // Get paid participants
+            const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnapshot = await window.firebaseDatabase.get(participantsRef);
+            const participants = participantsSnapshot.val() || {};
+            // Load users upfront once
+            const usersRefForNames2 = window.firebaseDatabase.ref(window.database, 'users');
+            const usersSnapForNames2 = await window.firebaseDatabase.get(usersRefForNames2);
+            const usersForNames2 = usersSnapForNames2.val() || {};
+            const paidParticipants = Object.entries(participants)
+                .filter(([uid, p]) => this.isPaidValue(p))
+                .map(([id]) => ({
+                    userId: id,
+                    name: (usersForNames2[id]?.userName || usersForNames2[id]?.name || 'Unknown'),
+                    paid: true
+                }));
+
+            // Get all completed matches from all previous rounds
+            const allMatchResults = [];
+            for (let roundNum = 1; roundNum <= currentRound; roundNum++) {
+                const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${roundNum}`);
+                const roundSnapshot = await window.firebaseDatabase.get(roundRef);
+                const roundMatches = roundSnapshot.val() || {};
+                
+                Object.values(roundMatches).forEach(match => {
+                    if (match.Winner && match.Winner !== "undecided") {
+                        allMatchResults.push({
+                            player1: match.Player1,
+                            player2: match.Player2,
+                            result: match.Winner === match.Player1 ? 'player1' : 
+                                   match.Winner === match.Player2 ? 'player2' : 'draw',
+                            round: roundNum,
+                            status: 'completed'
+                        });
+                    }
+                });
+            }
+
+            // Generate next round pairings
+            const swissMatchmaker = new window.SwissMatchmaker();
+            // Compute current standings from completed results, then order participants by points
+            const currentStandings = swissMatchmaker.calculateStandings(paidParticipants, allMatchResults);
+            const participantsOrdered = currentStandings.map(p => ({ userId: p.userId, name: p.name, paid: true }));
+            const pairings = swissMatchmaker.generatePairings(participantsOrdered, nextRound, allMatchResults);
+
+            // Get user data for names and profile pictures
+            const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+            const usersSnapshot = await window.firebaseDatabase.get(usersRef);
+            const users = usersSnapshot.val() || {};
+
+            // Save next round matches
+            const nextRoundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${nextRound}`);
+            const matchPromises = [];
+
+            // Save regular matches
+            pairings.matches.forEach((match, index) => {
+                const safeIndex = String(index).replace(/[^0-9]/g, '');
+                const matchId = `match_${Date.now()}_${safeIndex}`;
+                const matchRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${nextRound}/${matchId}`);
+                
+                const player1Data = users[match.player1] || {};
+                const player2Data = users[match.player2] || {};
+                
+                matchPromises.push(
+                    window.firebaseDatabase.set(matchRef, {
+                        Player1: match.player1,
+                        Player2: match.player2,
+                        Player1Name: player1Data.userName || player1Data.name || 'Unknown',
+                        Player2Name: player2Data.userName || player2Data.name || 'Unknown',
+                        Player1Profile: player1Data.profilePicture || player1Data.profileImage || player1Data.avatar || '',
+                        Player2Profile: player2Data.profilePicture || player2Data.profileImage || player2Data.avatar || '',
+                        Winner: "undecided"
+                    })
+                );
+            });
+
+            // Save bye matches
+            pairings.byes.forEach((userId, index) => {
+                const safeIndex = String(index).replace(/[^0-9]/g, '');
+                const matchId = `bye_${Date.now()}_${safeIndex}`;
+                const matchRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/ROUND_${nextRound}/${matchId}`);
+                
+                const playerData = users[userId] || {};
+                
+                matchPromises.push(
+                    window.firebaseDatabase.set(matchRef, {
+                        Player1: userId,
+                        Player1Name: playerData.userName || playerData.name || 'Unknown',
+                        Player1Profile: playerData.profilePicture || playerData.profileImage || playerData.avatar || '',
+                        Player2: null,
+                        Winner: userId // Bye winner is the player who got the bye
+                    })
+                );
+            });
+
+            await Promise.all(matchPromises);
+
+            // Update standings after round completion
+            const standings = swissMatchmaker.calculateStandings(paidParticipants, allMatchResults);
+            const standingsRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/STANDINGS`);
+            const standingsData = {};
+            standings.forEach(player => {
+                standingsData[player.userId] = player.totalPoints;
+            });
+            await window.firebaseDatabase.set(standingsRef, standingsData);
+
+            // Notify
+            if (nextRound >= totalRounds) {
+                this.showNotification(`Tournament completed! Round ${nextRound} generated.`, 'success');
+            } else {
+                this.showNotification(`Round ${nextRound} generated successfully`, 'success');
+            }
+
+            // Reload tournament data
+            await this.loadTournamentData({ id: eventId });
+
+        } catch (error) {
+            console.error('Error generating next round:', error);
+            this.showNotification('Error generating next round', 'error');
+        }
+    }
+
+    async loadStandings(eventId) {
+        try {
+            // Get participants and users for names
+            const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnapshot = await window.firebaseDatabase.get(participantsRef);
+            const participants = participantsSnapshot.val() || {};
+            const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+            const usersSnapshot = await window.firebaseDatabase.get(usersRef);
+            const users = usersSnapshot.val() || {};
+            const paidParticipants = Object.entries(participants)
+                .filter(([uid, v]) => this.isPaidValue(v))
+                .map(([userId]) => ({ userId, name: (users[userId]?.userName || users[userId]?.name || 'Unknown'), paid: true }));
+
+            // Get all completed matches from all rounds
+            const allMatchResults = [];
+            
+            // Get tournament metadata to know how many rounds exist
+            const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+            const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+            const roundsRoot = roundsRootSnap.val() || {};
+            const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            for (const key of roundKeys) {
+                const roundNum = parseInt(key.replace('ROUND_', ''), 10);
+                const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/${key}`);
+                const roundSnapshot = await window.firebaseDatabase.get(roundRef);
+                const roundMatches = roundSnapshot.val() || {};
+                Object.values(roundMatches).forEach(match => {
+                    if (match.Winner && match.Winner !== "undecided") {
+                        allMatchResults.push({
+                            player1: match.Player1,
+                            player2: match.Player2,
+                            result: match.Player2 == null ? 'bye' : (match.Winner === match.Player1 ? 'player1' : match.Winner === match.Player2 ? 'player2' : 'draw'),
+                            round: roundNum,
+                            status: 'completed'
+                        });
+                    }
+                });
+            }
+
+            // Calculate standings using Swiss matchmaker
+            const swissMatchmaker = new window.SwissMatchmaker();
+            const standings = swissMatchmaker.calculateStandings(paidParticipants, allMatchResults);
+
+            return standings;
+
+        } catch (error) {
+            console.error('Error loading standings:', error);
+            this.showNotification('Error loading standings', 'error');
+            return [];
+        }
+    }
+
+
+    renderSwissMatches(tournament, matchesByRound) {
+        const rounds = Object.keys(matchesByRound).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        let html = `
+            <div class="tournament-info">
+                <div class="tournament-status">
+                    <span class="status-badge status-${tournament.status}">${tournament.status.toUpperCase()}</span>
+                    <span>Round ${tournament.currentRound} of ${tournament.totalRounds}</span>
+                </div>
+            </div>
+        `;
+
+        rounds.forEach(roundNum => {
+            const roundMatches = matchesByRound[roundNum];
+            const isCurrentRound = parseInt(roundNum) === tournament.currentRound;
+            
+            html += `
+                <div class="round-container ${isCurrentRound ? 'current-round' : ''}">
+                    <div class="round-header">
+                        <h4>Round ${roundNum}</h4>
+                        ${isCurrentRound ? '<span class="current-badge">Current</span>' : ''}
+                    </div>
+                    <div class="matches-list">
+            `;
+
+            roundMatches.forEach(match => {
+                if (match.result === 'bye') {
+                        html += `
+                            <div class="match-card bye-match">
+                                <div class="match-players">
+                                    <div class="player">
+                                        <div class="player-info">
+                                            ${match.player1Profile ? `<img src="${match.player1Profile}" alt="${match.player1Name}" class="player-avatar" onerror="this.style.display='none'">` : ''}
+                                            <span class="player-name">${match.player1Name}</span>
+                                        </div>
+                                        <span class="bye-badge">BYE</span>
+                                    </div>
+                                </div>
+                                <div class="match-status completed">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Completed</span>
+                                </div>
+                            </div>
+                        `;
+                } else {
+                    const isCompleted = match.status === 'completed';
+                    const isPending = match.status === 'pending';
+                    
+                        html += `
+                            <div class="match-card ${isCompleted ? 'completed' : isPending ? 'pending' : ''}">
+                                <div class="match-players">
+                                    <div class="player ${match.result === 'player1' ? 'winner' : ''}">
+                                        <div class="player-info">
+                                            ${match.player1Profile ? `<img src="${match.player1Profile}" alt="${match.player1Name}" class="player-avatar" onerror="this.style.display='none'">` : ''}
+                                            <span class="player-name">${match.player1Name}</span>
+                                        </div>
+                                        ${match.result === 'player1' ? '<i class="fas fa-crown winner-icon"></i>' : ''}
+                                    </div>
+                                    <div class="vs">vs</div>
+                                    <div class="player ${match.result === 'player2' ? 'winner' : ''}">
+                                        <div class="player-info">
+                                            ${match.player2Profile ? `<img src="${match.player2Profile}" alt="${match.player2Name}" class="player-avatar" onerror="this.style.display='none'">` : ''}
+                                            <span class="player-name">${match.player2Name}</span>
+                                        </div>
+                                        ${match.result === 'player2' ? '<i class="fas fa-crown winner-icon"></i>' : ''}
+                                    </div>
+                                </div>
+                                <div class="match-status ${isCompleted ? 'completed' : isPending ? 'pending' : ''}">
+                                    ${isCompleted ? 
+                                        `<i class="fas fa-check-circle"></i><span>Completed</span>` :
+                                        isPending ?
+                                        `<i class="fas fa-clock"></i><span>Pending (Mobile App)</span>` :
+                                        `<i class="fas fa-times-circle"></i><span>Not Started</span>`
+                                    }
+                                </div>
+                            </div>
+                        `;
+                }
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        return html;
+    }
+
+    renderStandings(standings, tournament) {
+        let html = `
+            <div class="standings-header">
+                <h3>Tournament Standings</h3>
+                <div class="tournament-info">
+                    <span class="status-badge status-${tournament.status}">${tournament.status.toUpperCase()}</span>
+                    <span>Round ${tournament.currentRound} of ${tournament.totalRounds}</span>
+                </div>
+            </div>
+            <div class="standings-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Record</th>
+                            <th>Points</th>
+                            <th>OWP</th>
+                            <th>Games</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        standings.forEach((player, index) => {
+            const rank = index + 1;
+            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+            
+            html += `
+                <tr class="standings-row ${rank <= 3 ? 'podium' : ''}">
+                    <td class="rank">
+                        <span class="rank-number">${rank}</span>
+                        ${medal}
+                    </td>
+                    <td class="player-name">${player.name}</td>
+                    <td class="record">${player.record}</td>
+                    <td class="points">${player.totalPoints}</td>
+                    <td class="owp">${(player.owp * 100).toFixed(1)}%</td>
+                    <td class="games">${player.gamesPlayed}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        return html;
+    }
 }
 
 // Global event manager instance

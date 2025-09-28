@@ -645,3 +645,345 @@ body {
         opacity: 1;
     }
 }
+
+/* Matchmaking styles */
+.matchmaking-section,
+#bracketContainer {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 60vh;
+    overflow-y: scroll;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Custom scrollbar for matchmaking section */
+.matchmaking-section::-webkit-scrollbar,
+#bracketContainer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.matchmaking-section::-webkit-scrollbar-track,
+#bracketContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.matchmaking-section::-webkit-scrollbar-thumb,
+#bracketContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.matchmaking-section::-webkit-scrollbar-thumb:hover,
+#bracketContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.matchmaking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.matchmaking-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.matchmaking-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.tournament-info {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.tournament-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.status-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.status-ongoing {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.status-completed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.round-container {
+    margin-bottom: 25px;
+    flex-shrink: 0;
+}
+
+.round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.round-header h4 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 16px;
+}
+
+.current-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.current-round {
+    border-left: 4px solid #667eea;
+    padding-left: 15px;
+}
+
+.matches-list {
+    display: grid;
+    gap: 12px;
+}
+
+.match-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.match-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.match-card.completed {
+    border-color: #48bb78;
+    background: #f0fff4;
+}
+
+.match-card.pending {
+    border-color: #ed8936;
+    background: #fffaf0;
+}
+
+.match-players {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.player.winner {
+    color: #2f855a;
+    font-weight: 600;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.player-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+
+.player-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.winner-icon {
+    color: #f6ad55;
+    font-size: 14px;
+}
+
+.vs {
+    color: #718096;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0 15px;
+}
+
+.bye-match {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.bye-badge {
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.match-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.match-status.completed {
+    color: #2f855a;
+}
+
+.match-status.pending {
+    color: #ed8936;
+}
+
+.match-status i {
+    font-size: 12px;
+}
+
+/* Standings styles */
+.standings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.standings-header h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 18px;
+}
+
+.standings-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.standings-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.standings-table th {
+    background: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.standings-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #2d3748;
+}
+
+.standings-row.podium {
+    background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.standings-row.podium:nth-child(1) {
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+}
+
+.standings-row.podium:nth-child(2) {
+    background: linear-gradient(90deg, #c0c0c0 0%, #e5e7eb 100%);
+}
+
+.standings-row.podium:nth-child(3) {
+    background: linear-gradient(90deg, #cd7f32 0%, #d97706 100%);
+}
+
+.rank {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.rank-number {
+    background: #667eea;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.record {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.points {
+    font-weight: 600;
+    color: #2f855a;
+}
+
+.owp {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.games {
+    color: #718096;
+}
