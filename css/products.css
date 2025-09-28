@@ -107,7 +107,7 @@
     padding-bottom: 20px;
 }
 
-.products-table {
+.products-table-container {
     flex: 1;
     background-color: white;
     border: 2px solid #e9ecef;
@@ -116,111 +116,159 @@
     min-height: 250px;
     display: flex;
     flex-direction: column;
-    min-height: 0;
 }
 
-.table-header {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr;
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.header-cell {
-    padding: 12px 15px;
-    font-weight: bold;
-    color: #333;
-    text-align: left;
-    border-right: 1px solid #e9ecef;
+.products-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 14px;
 }
 
-.header-cell:last-child {
-    border-right: none;
-}
-
-.table-body {
-    min-height: 200px;
-    background-color: white;
+.table-scroll {
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 0;
 }
 
-.table-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr;
-    border-bottom: 1px solid #e9ecef;
-    transition: background-color 0.2s ease;
-}
-
-.table-row:hover {
+.products-table thead {
     background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
 }
 
-.table-row:last-child {
-    border-bottom: none;
-}
-
-.table-cell {
+.products-table th {
     padding: 12px 15px;
-    color: #333;
     text-align: left;
+    font-weight: bold;
+    color: #333;
     border-right: 1px solid #e9ecef;
     font-size: 14px;
 }
 
-.table-cell:last-child {
+.products-table th:last-child {
     border-right: none;
 }
 
+/* Center the actions column header */
+.products-table th:last-child {
+    text-align: center;
+}
+
+.products-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    color: #333;
+    text-align: left;
+    border-right: 1px solid #e9ecef;
+}
+
+.products-table td:last-child {
+    border-right: none;
+}
+
+/* Center the actions column cells */
+.products-table td:last-child {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.products-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.products-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.products-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
 /* Action buttons in table */
-.table-cell .btn-view,
-.table-cell .btn-edit {
+.products-table .btn-view,
+.products-table .btn-edit {
     background: #fff;
     border: 1px solid #e0e0e0;
     color: #333;
-    padding: 6px 10px;
+    padding: 0;
     border-radius: 8px;
     font-size: 14px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    width: 34px;
+    height: 34px;
     margin-right: 8px;
+    vertical-align: middle;
 }
 
-.table-cell .btn-view i,
-.table-cell .btn-edit i {
+.products-table .btn-view:last-child,
+.products-table .btn-edit:last-child {
+    margin-right: 0;
+}
+
+.products-table .btn-view i,
+.products-table .btn-edit i {
     pointer-events: none;
 }
 
-.table-cell .btn-view {
+.products-table .btn-view {
     color: #6c757d;
     border-color: #cfd4da;
 }
 
-.table-cell .btn-view:hover {
+.products-table .btn-view:hover {
     background-color: #6c757d;
     color: #fff;
     border-color: #6c757d;
 }
 
-.table-cell .btn-edit {
+.products-table .btn-edit {
     color: #3482B4;
     border-color: #3482B4;
 }
 
-.table-cell .btn-edit:hover {
+.products-table .btn-edit:hover {
     background-color: #3482B4;
     color: #fff;
     border-color: #3482B4;
 }
 
-.table-cell .btn-view:active,
-.table-cell .btn-edit:active {
+.products-table .btn-view:active,
+.products-table .btn-edit:active {
     transform: translateY(0.5px);
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.in-stock {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-badge.low-stock {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-badge.out-of-stock {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
 }
 
 .create-product-btn {

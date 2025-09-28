@@ -175,7 +175,7 @@ class OrdersManager {
         );
 
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No orders</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No orders</td></tr>';
             return;
         }
 
@@ -192,6 +192,7 @@ class OrdersManager {
                     <td>${itemsPreview}${more}</td>
                     <td>$${Number(o.total || 0).toFixed(2)}</td>
                     <td>${new Date(o.timestamp).toLocaleString()}</td>
+                    <td>${o.status || 'Pending'}</td>
                     <td>
                         <button class="btn-view" data-action="view">
                             <i class="fas fa-eye" aria-hidden="true"></i>

@@ -50,6 +50,7 @@ class ProductManager {
             })) : [];
             
             this.renderProducts();
+            this.updateStats();
             this.wireSearch();
             this.initDropdownFilters();
         } catch (error) {
@@ -105,6 +106,7 @@ class ProductManager {
         };
         this.filteredProducts = this.products.filter(matches);
         this.renderProducts();
+        this.updateStats();
     }
 
     wireSearch() {
@@ -124,46 +126,66 @@ class ProductManager {
                 });
             }
             this.renderProducts();
+            this.updateStats();
         });
     }
 
     renderProducts() {
-        const tableBody = document.querySelector('.products-table .table-body');
+        const tableBody = document.getElementById('productsTableBody');
         if (!tableBody) return;
 
         const allCount = (this.filteredProducts ?? this.products).length;
         if (allCount === 0) {
-            tableBody.innerHTML = '<div class="table-row"><div class="table-cell" style="grid-column: 1 / -1; text-align: center;">No products found</div></div>';
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No products found</td></tr>';
             const pageInfoEl = document.getElementById('pageInfo');
             if (pageInfoEl) pageInfoEl.textContent = 'Page 1 of 1 (0 rows)';
             return;
         }
 
         const list = (this.filteredProducts ?? this.products);
-        tableBody.innerHTML = list.map(product => `
-            <div class="table-row" data-id="${product.id}">
-                <div class="table-cell">${product.sku || product.id}</div>
-                <div class="table-cell">${product.productName || 'Unnamed Product'}</div>
-                <div class="table-cell">
+        tableBody.innerHTML = list.map(product => {
+            const stock = product.stock || 0;
+            let statusClass, statusText;
+            
+            if (stock === 0) {
+                statusClass = 'out-of-stock';
+                statusText = 'Out of Stock';
+            } else if (stock <= 5) {
+                statusClass = 'low-stock';
+                statusText = 'Low Stock';
+            } else {
+                statusClass = 'in-stock';
+                statusText = 'In Stock';
+            }
+            
+            return `
+            <tr data-id="${product.id}">
+                <td>${product.sku || product.id}</td>
+                <td>${product.productName || 'Unnamed Product'}</td>
+                <td>
                     <span class="stock-badge ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
                         ${product.stock || 0}
                     </span>
-                </div>
-                <div class="table-cell">${product.category || 'Uncategorized'}</div>
-                <div class="table-cell">${product.variant || 'Standard'}</div>
-                <div class="table-cell">
+                </td>
+                <td>${product.category || 'Uncategorized'}</td>
+                <td>${product.variant || 'Standard'}</td>
+                <td>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </td>
+                <td>
                     <button class="btn-view" data-action="view" aria-label="View product"><i class="fas fa-eye"></i></button>
                     <button class="btn-edit" data-action="edit" aria-label="Edit product"><i class="fas fa-edit"></i></button>
-                </div>
-            </div>
-        `).join('');
+                </td>
+            </tr>
+        `;
+        }).join('');
 
         // Delegate clicks for view/edit buttons
         tableBody.removeEventListener('click', this._tableClickHandler);
         this._tableClickHandler = (e) => {
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
-            const row = btn.closest('.table-row');
+            const row = btn.closest('tr');
             const productId = row && row.getAttribute('data-id');
             if (!productId) return;
             if (btn.dataset.action === 'view') {
@@ -179,6 +201,25 @@ class ProductManager {
         if (pageInfoEl) {
             pageInfoEl.textContent = `Page 1 of 1 (${list.length} rows)`;
         }
+
+        // Re-init pagination if available
+        if (window.initTablePagination) {
+            window.initTablePagination('.products-table-container');
+        }
+    }
+
+    updateStats() {
+        const totalProducts = this.products.length;
+        const lowStock = this.products.filter(p => (p.stock || 0) <= 5).length;
+        const categories = new Set(this.products.map(p => p.category).filter(Boolean)).size;
+        
+        const totalEl = document.getElementById('totalProducts');
+        const lowStockEl = document.getElementById('lowStock');
+        const categoriesEl = document.getElementById('totalCategories');
+        
+        if (totalEl) totalEl.textContent = String(totalProducts);
+        if (lowStockEl) lowStockEl.textContent = String(lowStock);
+        if (categoriesEl) categoriesEl.textContent = String(categories);
     }
 
     showAddProductForm(productId = null) {

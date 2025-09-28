@@ -1156,7 +1156,7 @@ class EventManager {
                             <div class="tournament-actions">
                                 <button class="btn-primary" onclick="window.eventManager.startSwissTournament('${event.id}')">
                                     <i class="fas fa-play"></i>
-                                    Start Swiss Tournament
+                                    Start Tournament
                                 </button>
                                 <button class="btn-secondary" onclick="window.eventManager.generateNextRound('${event.id}')">
                                     <i class="fas fa-forward"></i>

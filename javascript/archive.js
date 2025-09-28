@@ -105,10 +105,12 @@ class ArchiveManager {
             const tr = document.createElement('tr');
             const nameTd = document.createElement('td');
             const dateTd = document.createElement('td');
+            const statusTd = document.createElement('td');
             const actionsTd = document.createElement('td');
 
             nameTd.textContent = item.name;
             dateTd.textContent = item.archivedAt ? new Date(item.archivedAt).toISOString().split('T')[0] : '';
+            statusTd.textContent = item.status || 'Archived';
 
             const actions = document.createElement('div');
             actions.className = 'archives-actions';
@@ -123,6 +125,7 @@ class ArchiveManager {
 
             tr.appendChild(nameTd);
             tr.appendChild(dateTd);
+            tr.appendChild(statusTd);
             tr.appendChild(actionsTd);
             tbody.appendChild(tr);
         });

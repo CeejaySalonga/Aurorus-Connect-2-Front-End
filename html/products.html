@@ -66,17 +66,24 @@
                 
                 <!-- Middle Section: Products Table -->
                 <div class="products-middle-section">
-                    <div class="products-table">
-                        <div class="table-header">
-                            <div class="header-cell">SKU</div>
-                            <div class="header-cell">Name</div>
-                            <div class="header-cell">Stock</div>
-                            <div class="header-cell">Category</div>
-                            <div class="header-cell">Variant</div>
-                            <div class="header-cell">Actions</div>
-                        </div>
-                        <div class="table-body" id="productsTableBody">
-                            <!-- Products will be loaded dynamically -->
+                    <div class="products-table-container">
+                        <div class="table-scroll">
+                            <table class="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Name</th>
+                                        <th>Stock</th>
+                                        <th>Category</th>
+                                        <th>Variant</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody">
+                                    <!-- Products will be loaded dynamically -->
+                                </tbody>
+                            </table>
                         </div>
                         <div class="table-pagination" aria-label="Products table pagination controls">
                             <div class="pagination-left">

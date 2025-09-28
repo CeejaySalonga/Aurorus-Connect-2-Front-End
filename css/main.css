@@ -905,11 +905,39 @@ body {
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+/* Custom scrollbar for standings table */
+.standings-table::-webkit-scrollbar {
+    width: 8px;
+}
+
+.standings-table::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.standings-table::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.standings-table::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
 }
 
 .standings-table table {
     width: 100%;
     border-collapse: collapse;
+}
+
+.standings-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .standings-table th {
