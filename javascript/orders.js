@@ -35,6 +35,7 @@ class OrdersManager {
 
     init() {
         this.setupEventListeners();
+        this.initTabs();
         if (window.firebaseReady) {
             this.loadOrders();
             this.setupRealtimeListeners();
@@ -51,6 +52,23 @@ class OrdersManager {
         if (searchInput) {
             searchInput.addEventListener('input', () => this.renderOrdersTable());
         }
+    }
+
+    initTabs() {
+        const tabs = document.querySelectorAll('.orders-tabs .tab-btn');
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const target = btn.getAttribute('data-target');
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    if ('#' + pane.id === target) pane.classList.add('active');
+                    else pane.classList.remove('active');
+                });
+                // Re-render tables when switching tabs
+                this.renderOrdersTable();
+            });
+        });
     }
 
     setupRealtimeListeners() {
@@ -149,37 +167,191 @@ class OrdersManager {
 
     updateStats() {
         const today = new Date().toISOString().slice(0, 10);
+        const now = new Date();
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+        
         let ordersToday = 0;
         let revenueToday = 0;
+        let ordersThisWeek = 0;
+        let revenueThisWeek = 0;
+        let totalOrders = this.orders.length;
+        let totalRevenue = 0;
+        
+        // Status counts
+        const statusCounts = {
+            pending: 0,
+            'payment-submitted': 0,
+            'payment-verified': 0,
+            'proof-declined': 0,
+            'to-ship': 0,
+            'ready-to-pickup': 0,
+            completed: 0,
+            cancelled: 0
+        };
+        
+        
         for (const order of this.orders) {
-            const d = (order.timestamp || '').slice(0, 10);
-            if (d === today) {
-                ordersToday += 1;
-                revenueToday += Number(order.total || 0);
+            const orderDate = new Date(order.timestamp);
+            const orderDateStr = orderDate.toISOString().slice(0, 10);
+            const orderTotal = Number(order.total || 0);
+            const status = (order.status || 'pending').toLowerCase().replace(/_/g, '-');
+            
+            // Only include revenue from non-cancelled orders
+            if (status !== 'cancelled') {
+                totalRevenue += orderTotal;
+                
+                // Today's stats
+                if (orderDateStr === today) {
+                    ordersToday += 1;
+                    revenueToday += orderTotal;
+                }
+                
+                // This week's stats
+                if (orderDate >= startOfWeek && orderDate <= endOfWeek) {
+                    ordersThisWeek += 1;
+                    revenueThisWeek += orderTotal;
+                }
             }
+            
+            // Status counts (include all orders for status tracking)
+            if (statusCounts.hasOwnProperty(status)) {
+                statusCounts[status]++;
+            } else {
+                statusCounts.pending++;
+            }
+            
         }
+        
+        // Update today's stats
         const oEl = document.getElementById('ordersToday');
         const rEl = document.getElementById('revenueToday');
         if (oEl) oEl.textContent = String(ordersToday);
         if (rEl) rEl.textContent = `₱${revenueToday.toFixed(2)}`;
+        
+        // Update weekly stats
+        const owEl = document.getElementById('ordersThisWeek');
+        const rwEl = document.getElementById('revenueThisWeek');
+        if (owEl) owEl.textContent = String(ordersThisWeek);
+        if (rwEl) rwEl.textContent = `₱${revenueThisWeek.toFixed(2)}`;
+        
+        // Update status breakdown
+        document.getElementById('statusPending').textContent = statusCounts.pending;
+        document.getElementById('statusPaymentSubmitted').textContent = statusCounts['payment-submitted'];
+        document.getElementById('statusPaymentVerified').textContent = statusCounts['payment-verified'];
+        document.getElementById('statusProofDeclined').textContent = statusCounts['proof-declined'];
+        document.getElementById('statusToShip').textContent = statusCounts['to-ship'];
+        document.getElementById('statusReadyToPickup').textContent = statusCounts['ready-to-pickup'];
+        document.getElementById('statusCompleted').textContent = statusCounts.completed;
+        
+        
+        // Update top customers
+        this.updateTopCustomers();
+        
+        // Update performance metrics
+        const nonCancelledOrders = totalOrders - statusCounts.cancelled;
+        const avgOrderValue = nonCancelledOrders > 0 ? totalRevenue / nonCancelledOrders : 0;
+        const completedOrders = statusCounts.completed;
+        const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
+        
+        
+        document.getElementById('avgOrderValue').textContent = `₱${avgOrderValue.toFixed(2)}`;
+        document.getElementById('totalOrders').textContent = String(totalOrders);
+        document.getElementById('completionRate').textContent = `${completionRate.toFixed(1)}%`;
+    }
+    
+    
+    updateTopCustomers() {
+        const container = document.getElementById('topCustomers');
+        if (!container) return;
+        
+        // Group orders by customer
+        const customerStats = {};
+        
+        for (const order of this.orders) {
+            const status = (order.status || 'pending').toLowerCase().replace(/_/g, '-');
+            
+            // Only include non-cancelled orders in customer stats
+            if (status !== 'cancelled') {
+                const customer = order.customer || 'Unknown';
+                if (!customerStats[customer]) {
+                    customerStats[customer] = {
+                        name: customer,
+                        orderCount: 0,
+                        totalSpent: 0
+                    };
+                }
+                customerStats[customer].orderCount++;
+                customerStats[customer].totalSpent += Number(order.total || 0);
+            }
+        }
+        
+        // Convert to array and sort by total spent
+        const topCustomers = Object.values(customerStats)
+            .sort((a, b) => b.totalSpent - a.totalSpent)
+            .slice(0, 5);
+        
+        if (topCustomers.length === 0) {
+            container.innerHTML = '<div class="no-data">No customer data</div>';
+            return;
+        }
+        
+        const customersHtml = topCustomers.map(customer => `
+            <div class="top-customer-item">
+                <div class="top-customer-info">
+                    <div class="top-customer-name">${customer.name}</div>
+                    <div class="top-customer-orders">${customer.orderCount} orders</div>
+                </div>
+                <div class="top-customer-amount">₱${customer.totalSpent.toFixed(2)}</div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = customersHtml;
     }
 
     renderOrdersTable() {
-        const tbody = document.getElementById('ordersTableBody');
-        if (!tbody) return;
-
         const q = (document.getElementById('ordersSearch')?.value || '').toLowerCase();
-        const filtered = this.orders.filter(o =>
+        const allFiltered = this.orders.filter(o =>
             o.orderId.toLowerCase().includes(q) ||
             String(o.customer).toLowerCase().includes(q)
         );
 
-        if (filtered.length === 0) {
+        // Filter orders by status for each tab
+        const processingOrders = allFiltered.filter(o => {
+            const status = (o.status || 'pending').toLowerCase().replace(/_/g, '-');
+            return status !== 'completed' && status !== 'cancelled';
+        });
+
+        const completedOrders = allFiltered.filter(o => {
+            const status = (o.status || 'pending').toLowerCase().replace(/_/g, '-');
+            return status === 'completed';
+        });
+
+        const cancelledOrders = allFiltered.filter(o => {
+            const status = (o.status || 'pending').toLowerCase().replace(/_/g, '-');
+            return status === 'cancelled';
+        });
+
+        // Render processing orders
+        this.renderOrdersForTab(processingOrders, 'processingOrdersTableBody');
+        
+        // Render completed orders
+        this.renderOrdersForTab(completedOrders, 'completedOrdersTableBody');
+        
+        // Render cancelled orders
+        this.renderOrdersForTab(cancelledOrders, 'cancelledOrdersTableBody');
+    }
+
+    renderOrdersForTab(orders, tbodyId) {
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+
+        if (orders.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center">No orders</td></tr>';
             return;
         }
 
-        const rows = filtered.map(o => {
+        const rows = orders.map(o => {
             const itemCount = (o.items || []).length;
             const itemsPreview = itemCount === 1 ? '1 item' : `${itemCount} items`;
             return `
@@ -214,6 +386,147 @@ class OrdersManager {
                 if (id) this.openDetails(id);
             });
         });
+    }
+
+    async updateOrderStatus(orderId, newStatus) {
+        try {
+            // Try to find path under TBL_ORDERS/{userKey}/{orderId}
+            const rootRef = window.firebaseDatabase.ref(window.database, 'TBL_ORDERS');
+            const rootSnap = await window.firebaseDatabase.get(rootRef);
+            const rootVal = rootSnap.val() || {};
+
+            let updated = false;
+            for (const [userKey, ordersNode] of Object.entries(rootVal)) {
+                if (ordersNode && typeof ordersNode === 'object' && ordersNode[orderId]) {
+                    const targetRef = window.firebaseDatabase.ref(window.database, `TBL_ORDERS/${userKey}/${orderId}`);
+                    await window.firebaseDatabase.update(targetRef, { status: newStatus });
+                    updated = true;
+                    break;
+                }
+            }
+
+            // Fallback: flat structure TBL_ORDERS/{orderId}
+            if (!updated && rootVal[orderId]) {
+                const flatRef = window.firebaseDatabase.ref(window.database, `TBL_ORDERS/${orderId}`);
+                await window.firebaseDatabase.update(flatRef, { status: newStatus });
+                updated = true;
+            }
+
+            if (!updated) {
+                throw new Error('Order not found');
+            }
+
+            // Update local state
+            const order = this.orders.find(o => o.orderId === orderId);
+            if (order) {
+                order.status = newStatus;
+            }
+
+            // Re-render tables to reflect status change
+            this.renderOrdersTable();
+
+            return true;
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            throw error;
+        }
+    }
+
+    openProofInNewWindow(proofSrc, orderId) {
+        // Create a new window with proper HTML structure for displaying the image
+        const newWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        
+        if (newWindow) {
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Proof of Payment - Order #${orderId}</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            background-color: #f5f5f5;
+                            font-family: Arial, sans-serif;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            min-height: 100vh;
+                        }
+                        .header {
+                            background: white;
+                            padding: 20px;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            margin-bottom: 20px;
+                            text-align: center;
+                            width: 100%;
+                            max-width: 800px;
+                        }
+                        .header h1 {
+                            margin: 0 0 10px 0;
+                            color: #333;
+                            font-size: 24px;
+                        }
+                        .header p {
+                            margin: 0;
+                            color: #666;
+                            font-size: 14px;
+                        }
+                        .image-container {
+                            background: white;
+                            padding: 20px;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            text-align: center;
+                            width: 100%;
+                            max-width: 800px;
+                        }
+                        .proof-image {
+                            max-width: 100%;
+                            max-height: 70vh;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                        }
+                        .download-btn {
+                            background: #3482B4;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            margin-top: 15px;
+                            text-decoration: none;
+                            display: inline-block;
+                        }
+                        .download-btn:hover {
+                            background: #2c6b9a;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Proof of Payment</h1>
+                        <p>Order #${orderId}</p>
+                    </div>
+                    <div class="image-container">
+                        <img src="${proofSrc}" alt="Proof of Payment" class="proof-image">
+                        <br>
+                        <a href="${proofSrc}" download="proof-of-payment-${orderId}.png" class="download-btn">
+                            Download Image
+                        </a>
+                    </div>
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        } else {
+            // Fallback if popup is blocked
+            alert('Popup blocked. Please allow popups for this site to view the proof of payment.');
+        }
     }
 
     openDetails(orderId) {
@@ -259,7 +572,12 @@ class OrdersManager {
 				if (proofWrap && proofImg && proofLink) {
 					if (proofSrc) {
 						proofImg.src = proofSrc;
-						proofLink.href = proofSrc;
+						// Set up proper link behavior for data URLs
+						proofLink.href = '#';
+						proofLink.addEventListener('click', (e) => {
+							e.preventDefault();
+							this.openProofInNewWindow(proofSrc, order.orderId);
+						});
 						proofWrap.style.display = '';
 					} else {
 						proofWrap.style.display = 'none';
@@ -345,6 +663,7 @@ class OrdersManager {
                     document.body.style.overflow = '';
                 });
 
+
                 // Status select initial value
                 const statusSelect = formContainer.querySelector('.order-status-select');
                 if (statusSelect) {
@@ -388,8 +707,12 @@ class OrdersManager {
                             const paymentStatusEl2 = formContainer.querySelector('.order-payment-status');
                             if (paymentStatusEl2) paymentStatusEl2.textContent = newStatus.replace(/_/g, ' ');
 
-                            // Rerender list row
+                            // Rerender tables to reflect status change
                             this.renderOrdersTable();
+
+                            // Close the popup after successful update
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
                         } catch (err) {
                             console.error('Failed to update order status:', err);
                             alert('Failed to update status');

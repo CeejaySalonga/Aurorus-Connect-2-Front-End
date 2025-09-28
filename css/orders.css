@@ -5,18 +5,83 @@
     margin-bottom: 12px;
 }
 
-/* Position search like products page (right-aligned row under title) */
-.orders-filters {
+/* Orders toolbar with tabs and search */
+.orders-toolbar {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
-    margin-bottom: 20px;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 20px 0 12px 0;
 }
 
-.orders-filters .products-search { width: 320px; }
+.orders-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.orders-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.orders-toolbar .products-search { width: 320px; }
+
+/* Tabs for switching between Processing and Completed orders */
+.orders-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.orders-tabs .tab-btn {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    transition: all 0.3s ease;
+}
+
+.orders-tabs .tab-btn:hover { 
+    background-color: #f8f9fa; 
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.orders-tabs .tab-btn.active { 
+    background: #3482B4; 
+    color: #fff; 
+    border-color: #3482B4; 
+}
+
+.orders-tabs .tab-btn.active:hover {
+    background-color: #2c6a8f;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(52, 130, 180, 0.3);
+}
+
+.tab-pane { 
+    display: none; 
+}
+
+.tab-pane.active { 
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    min-height: 0; 
+}
 
 /* Modernized search input styling for Orders */
-.orders-filters .products-search {
+.orders-toolbar .products-search {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -28,17 +93,17 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
-.orders-filters .products-search:focus-within {
+.orders-toolbar .products-search:focus-within {
     border-color: #3482B4;
     box-shadow: 0 0 0 3px rgba(52,130,180,0.15), 0 1px 2px rgba(0,0,0,0.06);
 }
 
-.orders-filters .products-search i {
+.orders-toolbar .products-search i {
     color: #6c757d;
     font-size: 14px;
 }
 
-.orders-filters .products-search input {
+.orders-toolbar .products-search input {
     border: none;
     outline: none;
     font-size: 14px;
@@ -46,12 +111,12 @@
     background: transparent;
 }
 
-.orders-filters .products-search input::placeholder {
+.orders-toolbar .products-search input::placeholder {
     color: #9aa0a6;
 }
 
 @media (max-width: 600px) {
-    .orders-filters .products-search { width: 100%; }
+    .orders-toolbar .products-search { width: 100%; }
 }
 
 .order-details-modal {
@@ -311,6 +376,20 @@
     border-color: #a7f3d0;
 }
 
+/* Payment Verified Status */
+.status-badge.status-payment-verified {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+/* Proof Declined Status */
+.status-badge.status-proof-declined {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
 /* Pending Payment Status */
 .status-badge.status-pending-payment {
     background-color: #fef3c7;
@@ -353,11 +432,226 @@
     border-color: #d1d5db;
 }
 
+/* Pending Payment Status */
+.status-badge.status-pending-payment {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
 /* Generic status fallback */
 .status-badge:not([class*="status-"]) {
     background-color: #f3f4f6;
     color: #374151;
     border-color: #d1d5db;
+}
+
+/* Dashboard Enhancements */
+.section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #3482B4;
+    position: relative;
+}
+
+.section-title::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background-color: #28a745;
+}
+
+.stats-section {
+    margin-bottom: 15px;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
+}
+
+.status-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.status-item:hover {
+    background: #e9ecef;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.status-pending {
+    background-color: #d1d5db;
+}
+
+.status-dot.status-payment-submitted {
+    background-color: #a7f3d0;
+}
+
+.status-dot.status-payment-verified {
+    background-color: #bbf7d0;
+}
+
+.status-dot.status-proof-declined {
+    background-color: #fecaca;
+}
+
+.status-dot.status-to-ship {
+    background-color: #93c5fd;
+}
+
+.status-dot.status-ready-to-pickup {
+    background-color: #c7d2fe;
+}
+
+.status-dot.status-completed {
+    background-color: #a7f3d0;
+}
+
+.status-label {
+    flex: 1;
+    font-size: 12px;
+    color: #666;
+}
+
+.status-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+}
+
+
+.performance-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.metric-item:hover {
+    background: #e9ecef;
+}
+
+.metric-item:last-child {
+    margin-bottom: 0;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #666;
+}
+
+.metric-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+    font-style: italic;
+    padding: 20px 0;
+}
+
+/* Custom scrollbar for dashboard */
+.dashboard::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dashboard::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.dashboard::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.dashboard::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.top-customers {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.top-customer-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 12px;
+    background: #f8f9fa;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.top-customer-item:hover {
+    background: #e9ecef;
+}
+
+.top-customer-item:last-child {
+    margin-bottom: 0;
+}
+
+.top-customer-info {
+    flex: 1;
+}
+
+.top-customer-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.top-customer-orders {
+    color: #666;
+    font-size: 11px;
+}
+
+.top-customer-amount {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 11px;
 }
 
 /* Order Status Select Styling */
@@ -453,6 +747,7 @@
     background: #218838;
     transform: translateY(-1px);
 }
+
 
 @media (max-width: 768px) {
     .transactions-table {
