@@ -1490,6 +1490,8 @@ class EventManager {
                         <p>No tournament started yet</p>
                     </div>
                 `;
+                // Update buttons for no tournament state
+                this.updateTournamentButtons(eventId, false, false, false);
                 return;
             }
 
@@ -1536,9 +1538,63 @@ class EventManager {
             };
             bracketContainer.innerHTML = this.renderSwissMatches(tournament, matchesByRound);
 
+            // Update button states based on tournament status
+            this.updateTournamentButtons(eventId, true, tournament, matchesByRound);
+
         } catch (error) {
             console.error('Error loading matchmaking data:', error);
             this.showNotification('Error loading matchmaking data', 'error');
+        }
+    }
+
+    updateTournamentButtons(eventId, tournamentStarted, tournament, matchesByRound) {
+        const startBtn = document.querySelector('.btn-primary');
+        const nextRoundBtn = document.querySelector('.btn-secondary');
+        
+        if (!startBtn || !nextRoundBtn) return;
+
+        if (!tournamentStarted) {
+            // No tournament started
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Start Tournament';
+            nextRoundBtn.disabled = true;
+            nextRoundBtn.innerHTML = '<i class="fas fa-forward"></i> Next Round';
+            return;
+        }
+
+        // Tournament started - check if all rounds are complete
+        const allRoundsComplete = tournament.currentRound >= tournament.totalRounds;
+        const currentRoundMatches = matchesByRound[tournament.currentRound] || [];
+        const allMatchesComplete = currentRoundMatches.every(match => match.status === 'completed');
+
+        if (allRoundsComplete && allMatchesComplete) {
+            // Tournament finished
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-check"></i> Tournament Started';
+            nextRoundBtn.disabled = false;
+            nextRoundBtn.innerHTML = '<i class="fas fa-trophy"></i> Finalize Results';
+            nextRoundBtn.onclick = () => this.finalizeResult(eventId);
+        } else if (allMatchesComplete && !allRoundsComplete) {
+            // Current round complete, can generate next round
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-check"></i> Tournament Started';
+            nextRoundBtn.disabled = false;
+            nextRoundBtn.innerHTML = '<i class="fas fa-forward"></i> Next Round';
+            nextRoundBtn.onclick = () => this.generateNextRound(eventId);
+        } else {
+            // Current round not complete
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-check"></i> Tournament Started';
+            nextRoundBtn.disabled = true;
+            nextRoundBtn.innerHTML = '<i class="fas fa-clock"></i> Complete Current Round';
+        }
+    }
+
+    finalizeResult(eventId) {
+        // Switch to results tab
+        const resultsTab = document.querySelector('[data-tab="results"]');
+        if (resultsTab) {
+            resultsTab.click();
         }
     }
 
@@ -1621,6 +1677,12 @@ class EventManager {
 
             // Load standings
             const standings = await this.loadStandings(eventId);
+            
+            // Also calculate winners from database for additional validation
+            const winnersSummary = await this.calculateWinnersFromDatabase(eventId);
+            if (winnersSummary) {
+                console.log('[Results Debug] Winners summary:', winnersSummary);
+            }
 
             // Determine if tournament is complete: all rounds generated up to totalRounds and all matches decided
             let allRoundsDecided = true;
@@ -1652,7 +1714,18 @@ class EventManager {
             }
 
             // Always show full standings table with records
-            resultsContainer.innerHTML = this.renderStandings(standings, tournament);
+            resultsContainer.innerHTML = this.renderStandings(standings, tournament) + `
+                <div class="standings-actions" style="margin-top: 20px; text-align: center; display: flex; gap: 12px; justify-content: center;">
+                    <button class="btn-secondary" onclick="window.eventManager.fixDatabaseStandings('${eventId}')" style="background: #ff6b6b; color: white;">
+                        <i class="fas fa-wrench"></i>
+                        Fix Database Standings
+                    </button>
+                    <button class="btn-secondary" onclick="window.eventManager.showAdminOverride('${eventId}')" style="background: #6c5ce7; color: white;">
+                        <i class="fas fa-user-shield"></i>
+                        Admin Override
+                    </button>
+                </div>
+            `;
 
         } catch (error) {
             console.error('Error loading results data:', error);
@@ -2307,6 +2380,8 @@ class EventManager {
                 .filter(([uid, v]) => this.isPaidValue(v))
                 .map(([userId]) => ({ userId, name: (users[userId]?.userName || users[userId]?.name || 'Unknown'), paid: true }));
 
+            console.log('[Standings Debug] Paid participants:', paidParticipants);
+
             // Get all completed matches from all rounds
             const allMatchResults = [];
             
@@ -2315,27 +2390,209 @@ class EventManager {
             const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
             const roundsRoot = roundsRootSnap.val() || {};
             const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            
+            console.log('[Standings Debug] Round keys found:', roundKeys);
+            
             for (const key of roundKeys) {
                 const roundNum = parseInt(key.replace('ROUND_', ''), 10);
                 const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/${key}`);
                 const roundSnapshot = await window.firebaseDatabase.get(roundRef);
                 const roundMatches = roundSnapshot.val() || {};
+                
+                console.log(`[Standings Debug] Round ${roundNum} matches:`, roundMatches);
+                
                 Object.values(roundMatches).forEach(match => {
-                    if (match.Winner && match.Winner !== "undecided") {
-                        allMatchResults.push({
+                    // Check if match has a winner (not undecided, null, or undefined)
+                    if (match.Winner && match.Winner !== "undecided" && match.Winner !== null && match.Winner !== undefined) {
+                        let result;
+                        
+                        // Determine the result based on the Winner field
+                        if (match.Player2 === null || match.Player2 === undefined) {
+                            // This is a bye match
+                            result = 'bye';
+                        } else if (match.Winner === match.Player1) {
+                            // Player1 won
+                            result = 'player1';
+                        } else if (match.Winner === match.Player2) {
+                            // Player2 won
+                            result = 'player2';
+                        } else {
+                            // Winner is neither player1 nor player2 - this might be a draw
+                            // Check if Winner is a special draw indicator or default to draw
+                            result = 'draw';
+                        }
+                        
+                        const matchResult = {
                             player1: match.Player1,
                             player2: match.Player2,
-                            result: match.Player2 == null ? 'bye' : (match.Winner === match.Player1 ? 'player1' : match.Winner === match.Player2 ? 'player2' : 'draw'),
+                            winner: match.Winner,
+                            result: result,
                             round: roundNum,
                             status: 'completed'
-                        });
+                        };
+                        allMatchResults.push(matchResult);
+                        console.log(`[Standings Debug] Added match result:`, matchResult);
+                    } else {
+                        console.log(`[Standings Debug] Skipping incomplete match:`, match);
                     }
                 });
             }
 
+            console.log('[Standings Debug] All match results:', allMatchResults);
+
+            // Also check the STANDINGS node for comparison
+            const standingsRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/STANDINGS`);
+            const standingsSnapshot = await window.firebaseDatabase.get(standingsRef);
+            const dbStandings = standingsSnapshot.val() || {};
+            console.log('[Standings Debug] Database standings node:', dbStandings);
+
             // Calculate standings using Swiss matchmaker
             const swissMatchmaker = new window.SwissMatchmaker();
-            const standings = swissMatchmaker.calculateStandings(paidParticipants, allMatchResults);
+            let standings = swissMatchmaker.calculateStandings(paidParticipants, allMatchResults);
+
+            console.log('[Standings Debug] Calculated standings:', standings);
+            
+            // Compare with database standings for validation
+            console.log('[Standings Debug] Comparison - DB vs Calculated:');
+            Object.entries(dbStandings).forEach(([userId, dbPoints]) => {
+                const calculated = standings.find(s => s.userId === userId);
+                if (calculated) {
+                    console.log(`[Standings Debug] ${userId}: DB=${dbPoints}, Calculated=${calculated.totalPoints}`);
+                }
+            });
+
+            // If there's a mismatch, use database standings as source of truth
+            // but recalculate records from match results
+            const hasMismatch = Object.entries(dbStandings).some(([userId, dbPoints]) => {
+                const calculated = standings.find(s => s.userId === userId);
+                return calculated && calculated.totalPoints !== dbPoints;
+            });
+
+            if (hasMismatch) {
+                console.log('[Standings Debug] Mismatch detected, recalculating from database standings...');
+                
+                // Recalculate standings using database points but correct records
+                standings = paidParticipants.map(participant => {
+                    const userId = participant.userId;
+                    const name = participant.name;
+                    const dbPoints = dbStandings[userId] || 0;
+                    
+                    // Calculate actual record from match results
+                    let wins = 0;
+                    let losses = 0;
+                    let draws = 0;
+                    let byes = 0;
+                    
+                    allMatchResults.forEach(match => {
+                        const isPlayer1 = match.player1 === userId;
+                        const isPlayer2 = match.player2 === userId;
+                        
+                        if (!isPlayer1 && !isPlayer2) return;
+                        
+                        if (match.result === 'bye') {
+                            byes++;
+                        } else if (match.result === 'player1') {
+                            if (isPlayer1) wins++;
+                            else losses++;
+                        } else if (match.result === 'player2') {
+                            if (isPlayer2) wins++;
+                            else losses++;
+                        } else if (match.result === 'draw') {
+                            draws++;
+                        }
+                    });
+                    
+                    // Calculate OWP (Opponent Win Percentage)
+                    const opponents = new Set();
+                    allMatchResults.forEach(match => {
+                        const isPlayer1 = match.player1 === userId;
+                        const isPlayer2 = match.player2 === userId;
+                        
+                        if (!isPlayer1 && !isPlayer2) return;
+                        if (match.result === 'bye') return;
+                        
+                        if (isPlayer1) opponents.add(match.player2);
+                        if (isPlayer2) opponents.add(match.player1);
+                    });
+                    
+                    let owp = 0;
+                    if (opponents.size > 0) {
+                        const opponentWins = Array.from(opponents).map(opponentId => {
+                            const opponent = paidParticipants.find(p => p.userId === opponentId);
+                            if (!opponent) return 0;
+                            
+                            let oppWins = 0;
+                            let oppMatches = 0;
+                            allMatchResults.forEach(match => {
+                                const isOppPlayer1 = match.player1 === opponentId;
+                                const isOppPlayer2 = match.player2 === opponentId;
+                                
+                                if (isOppPlayer1 || isOppPlayer2) {
+                                    if (match.result === 'bye') return;
+                                    oppMatches++;
+                                    if (match.result === 'draw') {
+                                        oppWins += 0.5;
+                                    } else if ((match.result === 'player1' && isOppPlayer1) || 
+                                             (match.result === 'player2' && isOppPlayer2)) {
+                                        oppWins++;
+                                    }
+                                }
+                            });
+                            return oppMatches > 0 ? oppWins / oppMatches : 0;
+                        });
+                        owp = opponentWins.reduce((sum, winRate) => sum + winRate, 0) / opponentWins.length;
+                    }
+                    
+                    return {
+                        userId,
+                        name,
+                        wins,
+                        losses,
+                        draws,
+                        byes,
+                        totalPoints: dbPoints, // Use database points as source of truth
+                        owp,
+                        gamesPlayed: wins + losses + draws + byes,
+                        record: `${wins}-${losses}${draws > 0 ? `-${draws}` : ''}`
+                    };
+                });
+                
+                // Sort by: totalPoints desc, OWP desc, name asc
+                standings = standings.sort((a, b) => {
+                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                    if (b.owp !== a.owp) return b.owp - a.owp;
+                    return a.name.localeCompare(b.name);
+                });
+                
+                console.log('[Standings Debug] Recalculated standings from database:', standings);
+            }
+
+            // Additional validation: ensure all participants have standings
+            const participantIds = paidParticipants.map(p => p.userId);
+            const standingsIds = standings.map(s => s.userId);
+            const missingParticipants = participantIds.filter(id => !standingsIds.includes(id));
+            
+            if (missingParticipants.length > 0) {
+                console.warn('[Standings Debug] Missing participants in standings:', missingParticipants);
+                // Add missing participants with 0 points
+                missingParticipants.forEach(userId => {
+                    const participant = paidParticipants.find(p => p.userId === userId);
+                    if (participant) {
+                        standings.push({
+                            userId: participant.userId,
+                            name: participant.name,
+                            wins: 0,
+                            losses: 0,
+                            draws: 0,
+                            byes: 0,
+                            totalPoints: 0,
+                            owp: 0,
+                            gamesPlayed: 0,
+                            record: '0-0'
+                        });
+                    }
+                });
+            }
 
             return standings;
 
@@ -2346,6 +2603,365 @@ class EventManager {
         }
     }
 
+    /**
+     * Calculate winners from TBL_MATCHES database results
+     * @param {string} eventId - Event ID
+     * @returns {Object} Winners summary with detailed breakdown
+     */
+    async calculateWinnersFromDatabase(eventId) {
+        try {
+            console.log('[Winners Debug] Calculating winners for event:', eventId);
+            
+            // Get all rounds from TBL_MATCHES
+            const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+            const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+            const roundsRoot = roundsRootSnap.val() || {};
+            const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            
+            console.log('[Winners Debug] Found rounds:', roundKeys);
+            
+            const winnersSummary = {
+                totalMatches: 0,
+                completedMatches: 0,
+                playerWins: {},
+                roundResults: {}
+            };
+            
+            // Process each round
+            for (const key of roundKeys) {
+                const roundNum = parseInt(key.replace('ROUND_', ''), 10);
+                const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/${key}`);
+                const roundSnapshot = await window.firebaseDatabase.get(roundRef);
+                const roundMatches = roundSnapshot.val() || {};
+                
+                console.log(`[Winners Debug] Round ${roundNum} matches:`, roundMatches);
+                
+                const roundResults = [];
+                
+                Object.entries(roundMatches).forEach(([matchId, match]) => {
+                    winnersSummary.totalMatches++;
+                    
+                    if (match.Winner && match.Winner !== "undecided" && match.Winner !== null && match.Winner !== undefined) {
+                        winnersSummary.completedMatches++;
+                        
+                        const matchResult = {
+                            matchId,
+                            player1: match.Player1,
+                            player2: match.Player2,
+                            winner: match.Winner,
+                            isBye: match.Player2 === null || match.Player2 === undefined
+                        };
+                        
+                        roundResults.push(matchResult);
+                        
+                        // Count wins for each player
+                        if (matchResult.isBye) {
+                            // Bye match - Player1 gets the win
+                            const playerId = match.Player1;
+                            winnersSummary.playerWins[playerId] = (winnersSummary.playerWins[playerId] || 0) + 1;
+                        } else {
+                            // Regular match - Winner gets the win
+                            const winnerId = match.Winner;
+                            winnersSummary.playerWins[winnerId] = (winnersSummary.playerWins[winnerId] || 0) + 1;
+                        }
+                        
+                        console.log(`[Winners Debug] Match result:`, matchResult);
+                    }
+                });
+                
+                winnersSummary.roundResults[roundNum] = roundResults;
+            }
+            
+            console.log('[Winners Debug] Winners summary:', winnersSummary);
+            return winnersSummary;
+            
+        } catch (error) {
+            console.error('[Winners Debug] Error calculating winners:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Fix incorrect standings in the database
+     * @param {string} eventId - Event ID
+     */
+    async fixDatabaseStandings(eventId) {
+        try {
+            console.log('[Fix Debug] Fixing database standings for event:', eventId);
+            
+            // Get all match results
+            const roundsRootRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}`);
+            const roundsRootSnap = await window.firebaseDatabase.get(roundsRootRef);
+            const roundsRoot = roundsRootSnap.val() || {};
+            const roundKeys = Object.keys(roundsRoot).filter(k => /^ROUND_\d+$/.test(k));
+            
+            const allMatchResults = [];
+            for (const key of roundKeys) {
+                const roundNum = parseInt(key.replace('ROUND_', ''), 10);
+                const roundRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/${key}`);
+                const roundSnapshot = await window.firebaseDatabase.get(roundRef);
+                const roundMatches = roundSnapshot.val() || {};
+                
+                Object.values(roundMatches).forEach(match => {
+                    if (match.Winner && match.Winner !== "undecided" && match.Winner !== null && match.Winner !== undefined) {
+                        let result;
+                        if (match.Player2 === null || match.Player2 === undefined) {
+                            result = 'bye';
+                        } else if (match.Winner === match.Player1) {
+                            result = 'player1';
+                        } else if (match.Winner === match.Player2) {
+                            result = 'player2';
+                        } else {
+                            result = 'draw';
+                        }
+                        
+                        allMatchResults.push({
+                            player1: match.Player1,
+                            player2: match.Player2,
+                            result: result,
+                            round: roundNum,
+                            status: 'completed'
+                        });
+                    }
+                });
+            }
+            
+            // Get participants
+            const participantsRef = window.firebaseDatabase.ref(window.database, `TBL_EVENTS/${eventId}/participants`);
+            const participantsSnapshot = await window.firebaseDatabase.get(participantsRef);
+            const participants = participantsSnapshot.val() || {};
+            const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+            const usersSnapshot = await window.firebaseDatabase.get(usersRef);
+            const users = usersSnapshot.val() || {};
+            const paidParticipants = Object.entries(participants)
+                .filter(([uid, v]) => this.isPaidValue(v))
+                .map(([userId]) => ({ userId, name: (users[userId]?.userName || users[userId]?.name || 'Unknown'), paid: true }));
+            
+            // Calculate correct standings
+            const swissMatchmaker = new window.SwissMatchmaker();
+            const correctStandings = swissMatchmaker.calculateStandings(paidParticipants, allMatchResults);
+            
+            // Update database standings
+            const standingsRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/STANDINGS`);
+            const correctStandingsData = {};
+            correctStandings.forEach(player => {
+                correctStandingsData[player.userId] = player.totalPoints;
+            });
+            
+            await window.firebaseDatabase.set(standingsRef, correctStandingsData);
+            
+            console.log('[Fix Debug] Fixed database standings:', correctStandingsData);
+            this.showNotification('Database standings have been corrected', 'success');
+            
+            // Reload the tournament data
+            await this.loadTournamentData({ id: eventId });
+            
+        } catch (error) {
+            console.error('[Fix Debug] Error fixing database standings:', error);
+            this.showNotification('Error fixing database standings', 'error');
+        }
+    }
+
+    /**
+     * Show admin override modal for manual standings adjustment
+     * @param {string} eventId - Event ID
+     */
+    async showAdminOverride(eventId) {
+        try {
+            // Get current standings
+            const standings = await this.loadStandings(eventId);
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div class="admin-override-modal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                ">
+                    <div class="modal-content" style="
+                        background: white;
+                        padding: 30px;
+                        border-radius: 12px;
+                        max-width: 800px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                    ">
+                        <div class="modal-header" style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 20px;
+                            border-bottom: 2px solid #eee;
+                            padding-bottom: 15px;
+                        ">
+                            <h2 style="margin: 0; color: #333;">
+                                <i class="fas fa-user-shield"></i>
+                                Admin Override - Manual Standings
+                            </h2>
+                            <button onclick="this.closest('.admin-override-modal').remove()" style="
+                                background: none;
+                                border: none;
+                                font-size: 24px;
+                                cursor: pointer;
+                                color: #999;
+                            ">&times;</button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <p style="color: #666; margin-bottom: 20px;">
+                                <strong>Warning:</strong> This allows manual adjustment of tournament standings. 
+                                Use with caution as it can affect tournament integrity.
+                            </p>
+                            
+                            <div class="standings-editor">
+                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                                    <thead>
+                                        <tr style="background: #f8f9fa;">
+                                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Player</th>
+                                            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Wins</th>
+                                            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Losses</th>
+                                            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Draws</th>
+                                            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Byes</th>
+                                            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminStandingsTable">
+                                        ${standings.map((player, index) => `
+                                            <tr>
+                                                <td style="padding: 12px; border: 1px solid #ddd;">
+                                                    <strong>${player.name}</strong>
+                                                    <input type="hidden" class="player-id" value="${player.userId}">
+                                                </td>
+                                                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                                                    <input type="number" class="wins-input" value="${player.wins}" min="0" style="width: 60px; text-align: center;">
+                                                </td>
+                                                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                                                    <input type="number" class="losses-input" value="${player.losses}" min="0" style="width: 60px; text-align: center;">
+                                                </td>
+                                                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                                                    <input type="number" class="draws-input" value="${player.draws}" min="0" style="width: 60px; text-align: center;">
+                                                </td>
+                                                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                                                    <input type="number" class="byes-input" value="${player.byes}" min="0" style="width: 60px; text-align: center;">
+                                                </td>
+                                                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                                                    <input type="number" class="points-input" value="${player.totalPoints}" min="0" style="width: 60px; text-align: center;">
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="modal-actions" style="
+                                display: flex;
+                                gap: 12px;
+                                justify-content: center;
+                                margin-top: 20px;
+                            ">
+                                <button onclick="window.eventManager.applyAdminOverride('${eventId}')" style="
+                                    background: #28a745;
+                                    color: white;
+                                    border: none;
+                                    padding: 12px 24px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                ">
+                                    <i class="fas fa-check"></i>
+                                    Apply Changes
+                                </button>
+                                <button onclick="this.closest('.admin-override-modal').remove()" style="
+                                    background: #6c757d;
+                                    color: white;
+                                    border: none;
+                                    padding: 12px 24px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                ">
+                                    <i class="fas fa-times"></i>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+        } catch (error) {
+            console.error('Error showing admin override:', error);
+            this.showNotification('Error showing admin override', 'error');
+        }
+    }
+
+    /**
+     * Apply admin override changes to database
+     * @param {string} eventId - Event ID
+     */
+    async applyAdminOverride(eventId) {
+        try {
+            console.log('[Admin Override] Applying manual standings changes...');
+            
+            // Get all input values
+            const rows = document.querySelectorAll('#adminStandingsTable tr');
+            const newStandings = {};
+            const newStandingsData = [];
+            
+            rows.forEach(row => {
+                const playerId = row.querySelector('.player-id').value;
+                const wins = parseInt(row.querySelector('.wins-input').value) || 0;
+                const losses = parseInt(row.querySelector('.losses-input').value) || 0;
+                const draws = parseInt(row.querySelector('.draws-input').value) || 0;
+                const byes = parseInt(row.querySelector('.byes-input').value) || 0;
+                const points = parseInt(row.querySelector('.points-input').value) || 0;
+                
+                newStandings[playerId] = points;
+                newStandingsData.push({
+                    userId: playerId,
+                    wins,
+                    losses,
+                    draws,
+                    byes,
+                    totalPoints: points,
+                    gamesPlayed: wins + losses + draws + byes,
+                    record: `${wins}-${losses}${draws > 0 ? `-${draws}` : ''}`
+                });
+            });
+            
+            // Update database standings
+            const standingsRef = window.firebaseDatabase.ref(window.database, `TBL_MATCHES/${eventId}/STANDINGS`);
+            await window.firebaseDatabase.set(standingsRef, newStandings);
+            
+            // Log the changes
+            console.log('[Admin Override] Applied standings:', newStandings);
+            console.log('[Admin Override] New standings data:', newStandingsData);
+            
+            // Close modal
+            document.querySelector('.admin-override-modal').remove();
+            
+            // Show success message
+            this.showNotification('Admin override applied successfully', 'success');
+            
+            // Reload tournament data
+            await this.loadTournamentData({ id: eventId });
+            
+        } catch (error) {
+            console.error('[Admin Override] Error applying changes:', error);
+            this.showNotification('Error applying admin override', 'error');
+        }
+    }
 
     renderSwissMatches(tournament, matchesByRound) {
         const rounds = Object.keys(matchesByRound).sort((a, b) => parseInt(a) - parseInt(b));

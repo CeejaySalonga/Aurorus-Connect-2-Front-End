@@ -30,6 +30,8 @@ class SwissMatchmaker {
      * @returns {Array} Sorted standings array
      */
     calculateStandings(participants, previousResults = []) {
+        console.log('[Swiss Debug] calculateStandings called with:', { participants, previousResults });
+        
         const standings = participants.map(participant => {
             const userId = participant.userId || participant.id;
             const name = participant.name || participant.userName || 'Unknown';
@@ -41,6 +43,8 @@ class SwissMatchmaker {
             let totalPoints = 0;
             const opponents = new Set();
 
+            console.log(`[Swiss Debug] Processing participant: ${name} (${userId})`);
+
             // Count results for this participant
             previousResults.forEach(match => {
                 if (match.status !== 'completed') return;
@@ -49,6 +53,8 @@ class SwissMatchmaker {
                 const isPlayer2 = match.player2 === userId;
                 
                 if (!isPlayer1 && !isPlayer2) return;
+                
+                console.log(`[Swiss Debug] ${name} found in match:`, match);
 
                 if (match.result === 'bye') {
                     if (isPlayer1 || isPlayer2) {
@@ -113,7 +119,7 @@ class SwissMatchmaker {
                 owp = opponentWins.reduce((sum, winRate) => sum + winRate, 0) / opponentWins.length;
             }
 
-            return {
+            const playerStanding = {
                 userId,
                 name,
                 wins,
@@ -125,14 +131,22 @@ class SwissMatchmaker {
                 gamesPlayed: wins + losses + draws + byes,
                 record: `${wins}-${losses}${draws > 0 ? `-${draws}` : ''}`
             };
+            
+            console.log(`[Swiss Debug] ${name} final standing:`, playerStanding);
+            return playerStanding;
         });
 
+        console.log('[Swiss Debug] All standings before sort:', standings);
+
         // Sort by: totalPoints desc, OMW% desc, name asc
-        return standings.sort((a, b) => {
+        const sortedStandings = standings.sort((a, b) => {
             if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
             if (b.owp !== a.owp) return b.owp - a.owp;
             return a.name.localeCompare(b.name);
         });
+        
+        console.log('[Swiss Debug] Final sorted standings:', sortedStandings);
+        return sortedStandings;
     }
 
     /**

@@ -613,6 +613,21 @@ body {
     background: #cbd5e0;
 }
 
+/* Disabled button styles */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #ccc;
+    color: #666;
+}
+
+.btn-primary:disabled:hover,
+.btn-secondary:disabled:hover {
+    background-color: #ccc;
+    transform: none;
+}
+
 /* Notification Styles */
 .notification {
     position: fixed;
