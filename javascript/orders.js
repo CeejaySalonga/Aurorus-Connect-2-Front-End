@@ -161,7 +161,7 @@ class OrdersManager {
         const oEl = document.getElementById('ordersToday');
         const rEl = document.getElementById('revenueToday');
         if (oEl) oEl.textContent = String(ordersToday);
-        if (rEl) rEl.textContent = `$${revenueToday.toFixed(2)}`;
+        if (rEl) rEl.textContent = `₱${revenueToday.toFixed(2)}`;
     }
 
     renderOrdersTable() {
@@ -180,19 +180,16 @@ class OrdersManager {
         }
 
         const rows = filtered.map(o => {
-            const itemsPreview = (o.items || [])
-                .slice(0, 2)
-                .map(it => `${it.name || it.productName || 'Item'} x${it.qty || it.quantity || 1}`)
-                .join(', ');
-            const more = (o.items?.length || 0) > 2 ? ` +${o.items.length - 2} more` : '';
+            const itemCount = (o.items || []).length;
+            const itemsPreview = itemCount === 1 ? '1 item' : `${itemCount} items`;
             return `
                 <tr data-order-id="${o.orderId}">
                     <td>${o.orderId}</td>
                     <td>${o.customer}</td>
-                    <td>${itemsPreview}${more}</td>
-                    <td>$${Number(o.total || 0).toFixed(2)}</td>
+                    <td>${itemsPreview}</td>
+                    <td>₱${Number(o.total || 0).toFixed(2)}</td>
                     <td>${new Date(o.timestamp).toLocaleString()}</td>
-                    <td>${o.status || 'Pending'}</td>
+                    <td><span class="status-badge status-${(o.status || 'pending').toLowerCase().replace(/_/g, '-')}">${(o.status || 'Pending').replace(/_/g, ' ')}</span></td>
                     <td>
                         <button class="btn-view" data-action="view">
                             <i class="fas fa-eye" aria-hidden="true"></i>
@@ -284,7 +281,7 @@ class OrdersManager {
                                 <div class="item-title">${name}</div>
                                 <div class="item-subtitle">${variant}</div>
                               </div>
-                              <div class="item-meta">${qty} x $${price.toFixed(2)} = $${lineTotal.toFixed(2)}</div>
+                              <div class="item-meta">${qty} x ₱${price.toFixed(2)} = ₱${lineTotal.toFixed(2)}</div>
                             </div>
                         `;
                     }).join('');
@@ -296,10 +293,25 @@ class OrdersManager {
                 const shipNameEl = formContainer.querySelector('.order-ship-name');
                 const shipAddrEl = formContainer.querySelector('.order-ship-address');
                 const shipContactEl = formContainer.querySelector('.order-ship-contact');
+                const shipTypeEl = formContainer.querySelector('.order-ship-type');
+                
                 if (shipNameEl) shipNameEl.textContent = String(ship.name || ship.recipient || order.customer || '—');
-                if (shipAddrEl) shipAddrEl.textContent = [ship.address1, ship.address2, ship.city, ship.state, ship.zip]
-                    .filter(Boolean).join(', ') || '—';
+                if (shipAddrEl) {
+                    // Handle different address formats from database
+                    const addressParts = [
+                        ship.address || ship.address1,
+                        ship.address2,
+                        ship.city,
+                        ship.state,
+                        ship.zip
+                    ].filter(Boolean);
+                    shipAddrEl.textContent = addressParts.length > 0 ? addressParts.join(', ') : '—';
+                }
                 if (shipContactEl) shipContactEl.textContent = ship.phone || ship.contact || order.userEmail || '—';
+                if (shipTypeEl) {
+                    const shippingType = ship.type || ship.shippingType || 'standard';
+                    shipTypeEl.textContent = shippingType.charAt(0).toUpperCase() + shippingType.slice(1);
+                }
 
                 // Totals (fallbacks if not present on order)
                 const subtotalEls = formContainer.querySelectorAll('.order-subtotal');
@@ -321,10 +333,10 @@ class OrdersManager {
                     order.totals?.grandTotal ??
                     (subtotal + tax - discount)
                 );
-                subtotalEls.forEach(el => { el.textContent = `$${subtotal.toFixed(2)}`; });
-                taxEls.forEach(el => { el.textContent = `$${tax.toFixed(2)}`; });
-                discountEls.forEach(el => { el.textContent = `$${discount.toFixed(2)}`; });
-                totalEls.forEach(el => { el.innerHTML = `<strong>$${total.toFixed(2)}</strong>`; });
+                subtotalEls.forEach(el => { el.textContent = `₱${subtotal.toFixed(2)}`; });
+                taxEls.forEach(el => { el.textContent = `₱${tax.toFixed(2)}`; });
+                discountEls.forEach(el => { el.textContent = `₱${discount.toFixed(2)}`; });
+                totalEls.forEach(el => { el.innerHTML = `<strong>₱${total.toFixed(2)}</strong>`; });
 
                 // Wire Close
                 const backBtn = formContainer.querySelector('.back-btn');

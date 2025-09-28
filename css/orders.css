@@ -289,6 +289,171 @@
     text-align: center;
 }
 
+/* Status Badge Styles */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+/* Payment Submitted Status */
+.status-badge.status-payment-submitted {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+/* Pending Payment Status */
+.status-badge.status-pending-payment {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+/* To Ship Status */
+.status-badge.status-to-ship {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+/* Ready to Pickup Status */
+.status-badge.status-ready-to-pickup {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border-color: #c7d2fe;
+}
+
+/* Completed Status */
+.status-badge.status-completed {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+/* Cancelled Status */
+.status-badge.status-cancelled {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+
+/* Default/Pending Status */
+.status-badge.status-pending {
+    background-color: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+/* Generic status fallback */
+.status-badge:not([class*="status-"]) {
+    background-color: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+/* Order Status Select Styling */
+.order-status-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    background: white;
+    color: #2d3748;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+    min-width: 180px;
+}
+
+.order-status-select:focus {
+    outline: none;
+    border-color: #3482B4;
+    box-shadow: 0 0 0 3px rgba(52, 130, 180, 0.1);
+}
+
+.order-status-select:hover {
+    border-color: #cbd5e0;
+}
+
+.order-status-select option {
+    padding: 8px 12px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Button Group Styling */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.back-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+.save-status-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.save-status-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
 @media (max-width: 768px) {
     .transactions-table {
         font-size: 12px;
@@ -303,6 +468,12 @@
     }
     .table-pagination .pagination-right {
         justify-content: space-between;
+    }
+    
+    /* Smaller status badges on mobile */
+    .status-badge {
+        font-size: 10px;
+        padding: 3px 6px;
     }
 }
 
