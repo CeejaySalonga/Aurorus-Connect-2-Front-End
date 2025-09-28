@@ -292,6 +292,28 @@
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
+
+.archive-zero-stock-btn {
+    background-color: #FFC107;
+    color: #212529;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    width: fit-content;
+}
+
+.archive-zero-stock-btn:hover {
+    background-color: #E0A800;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
 .filters-row {
     display: flex;
     align-items: center;

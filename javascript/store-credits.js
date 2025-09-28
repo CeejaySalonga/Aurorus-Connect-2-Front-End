@@ -665,10 +665,17 @@ class CreditManager {
             
             // Update product stock
             if (product.stock > 0) {
-                await window.firebaseDatabase.update(
-                    window.firebaseDatabase.ref(window.database, `TBL_PRODUCTS/${productId}`),
-                    { stock: product.stock - 1 }
-                );
+                const newStock = product.stock - 1;
+                
+                // Check if stock will reach 0, if so archive the product
+                if (newStock <= 0) {
+                    await this.archiveProductToArchived(productId);
+                } else {
+                    await window.firebaseDatabase.update(
+                        window.firebaseDatabase.ref(window.database, `TBL_PRODUCTS/${productId}`),
+                        { stock: newStock }
+                    );
+                }
             }
             
             this.showNotification(`Payment successful! Deducted: $${productPrice}, New balance: $${newBalance}`, 'success');
@@ -684,6 +691,39 @@ class CreditManager {
         } catch (error) {
             console.error('Error processing payment:', error);
             return { success: false, message: error.message };
+        }
+    }
+
+    async archiveProductToArchived(productId) {
+        try {
+            // Get the product data from TBL_PRODUCTS
+            const productRef = window.firebaseDatabase.ref(window.database, 'TBL_PRODUCTS/' + productId);
+            const productSnapshot = await window.firebaseDatabase.get(productRef);
+            const productData = productSnapshot.val();
+
+            if (!productData) {
+                throw new Error('Product not found');
+            }
+
+            // Add archived timestamp and set stock to 0
+            const archivedProductData = {
+                ...productData,
+                stock: 0,
+                archivedAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+
+            // Move to TBL_ARCHIVED_PRODUCTS
+            const archivedRef = window.firebaseDatabase.ref(window.database, 'TBL_ARCHIVED_PRODUCTS/' + productId);
+            await window.firebaseDatabase.set(archivedRef, archivedProductData);
+
+            // Remove from TBL_PRODUCTS
+            await window.firebaseDatabase.remove(productRef);
+
+            console.log(`Product ${productId} archived successfully`);
+        } catch (error) {
+            console.error('Error archiving product:', error);
+            throw error;
         }
     }
 }

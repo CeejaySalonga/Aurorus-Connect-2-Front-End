@@ -662,15 +662,54 @@ class ProductManager {
 
     async updateProductStock(productId, newStock) {
         try {
-            await window.firebaseDatabase.update(window.firebaseDatabase.ref(window.database, 'TBL_PRODUCTS/' + productId), {
-                stock: newStock,
-                lastUpdated: new Date().toISOString()
-            });
-            this.showNotification('Product stock updated', 'success');
+            // Check if stock is going to 0, if so archive the product
+            if (newStock <= 0) {
+                await this.archiveProductToArchived(productId);
+                this.showNotification('Product stock reached 0, product archived', 'info');
+            } else {
+                await window.firebaseDatabase.update(window.firebaseDatabase.ref(window.database, 'TBL_PRODUCTS/' + productId), {
+                    stock: newStock,
+                    lastUpdated: new Date().toISOString()
+                });
+                this.showNotification('Product stock updated', 'success');
+            }
             this.loadProducts();
         } catch (error) {
             console.error('Error updating product stock:', error);
             this.showNotification('Error updating product stock', 'error');
+        }
+    }
+
+    async archiveProductToArchived(productId) {
+        try {
+            // Get the product data from TBL_PRODUCTS
+            const productRef = window.firebaseDatabase.ref(window.database, 'TBL_PRODUCTS/' + productId);
+            const productSnapshot = await window.firebaseDatabase.get(productRef);
+            const productData = productSnapshot.val();
+
+            if (!productData) {
+                throw new Error('Product not found');
+            }
+
+            // Add archived timestamp and set stock to 0
+            const archivedProductData = {
+                ...productData,
+                stock: 0,
+                archivedAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+
+            // Move to TBL_ARCHIVED_PRODUCTS
+            const archivedRef = window.firebaseDatabase.ref(window.database, 'TBL_ARCHIVED_PRODUCTS/' + productId);
+            await window.firebaseDatabase.set(archivedRef, archivedProductData);
+
+            // Remove from TBL_PRODUCTS
+            await window.firebaseDatabase.remove(productRef);
+
+            console.log(`Product ${productId} archived successfully`);
+        } catch (error) {
+            console.error('Error archiving product:', error);
+            throw error;
         }
     }
 
@@ -680,6 +719,35 @@ class ProductManager {
 
     getAvailableProducts() {
         return this.products.filter(p => p.stock > 0);
+    }
+
+    async checkAndArchiveZeroStockProducts() {
+        try {
+            console.log('Checking for zero-stock products to archive...');
+            const zeroStockProducts = this.products.filter(p => p.stock <= 0);
+            
+            if (zeroStockProducts.length === 0) {
+                console.log('No zero-stock products found');
+                return;
+            }
+
+            console.log(`Found ${zeroStockProducts.length} zero-stock products to archive`);
+            
+            for (const product of zeroStockProducts) {
+                try {
+                    await this.archiveProductToArchived(product.id);
+                    console.log(`Archived product: ${product.name} (ID: ${product.id})`);
+                } catch (error) {
+                    console.error(`Failed to archive product ${product.name} (ID: ${product.id}):`, error);
+                }
+            }
+            
+            this.showNotification(`Archived ${zeroStockProducts.length} zero-stock products`, 'info');
+            this.loadProducts(); // Refresh the products list
+        } catch (error) {
+            console.error('Error checking and archiving zero-stock products:', error);
+            this.showNotification('Error archiving zero-stock products', 'error');
+        }
     }
 
     toggleDropdown(dropdownId) {
