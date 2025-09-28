@@ -224,8 +224,10 @@ class App {
 
     async loadInitialData() {
         if (this.dashboardManager) {
+            this.dashboardManager.updateDate();
             await this.dashboardManager.loadDashboardStats();
             await this.dashboardManager.loadCheckInData();
+            await this.dashboardManager.loadTodayEvents();
         }
     }
 
@@ -256,76 +258,91 @@ class DashboardManager {
         // Add any dashboard-specific event listeners here
     }
 
+    updateDate() {
+        const dateElement = document.querySelector('.date');
+        if (dateElement) {
+            const today = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            dateElement.textContent = today.toLocaleDateString('en-US', options);
+        }
+    }
+
     async loadDashboardStats() {
         try {
-            // Load today's check-ins count
             const today = new Date().toISOString().split('T')[0];
+            
+            // Load today's check-ins count and unique users
             const checkInsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN'));
             const checkIns = checkInsSnapshot.val() || {};
             let todayCheckIns = 0;
-            Object.values(checkIns).forEach(value => {
+            const uniqueUsers = new Set();
+            
+            Object.entries(checkIns).forEach(([userId, value]) => {
                 if (typeof value === 'string') {
-                    if (value.startsWith(today)) todayCheckIns += 1;
+                    if (value.startsWith(today)) {
+                        todayCheckIns += 1;
+                        uniqueUsers.add(userId);
+                    }
                 } else if (value && typeof value.timestamp === 'string') {
-                    if (value.timestamp.startsWith(today)) todayCheckIns += 1;
+                    if (value.timestamp.startsWith(today)) {
+                        todayCheckIns += 1;
+                        uniqueUsers.add(userId);
+                    }
                 } else if (value && typeof value === 'object') {
                     Object.values(value).forEach(v => {
                         if (typeof v === 'string') {
-                            if (v.startsWith(today)) todayCheckIns += 1;
+                            if (v.startsWith(today)) {
+                                todayCheckIns += 1;
+                                uniqueUsers.add(userId);
+                            }
                         } else if (v && typeof v.timestamp === 'string') {
-                            if (v.timestamp.startsWith(today)) todayCheckIns += 1;
+                            if (v.timestamp.startsWith(today)) {
+                                todayCheckIns += 1;
+                                uniqueUsers.add(userId);
+                            }
                         }
                     });
                 }
             });
 
-            const todayCheckinsElement = document.querySelector('.stat-item:nth-child(1) .stat-value');
+            // Update check-ins count
+            const todayCheckinsElement = document.getElementById('checkinsToday');
             if (todayCheckinsElement) {
                 todayCheckinsElement.textContent = todayCheckIns;
             }
 
-            // Load total credits issued today
+            // Update unique users count
+            const uniqueUsersElement = document.getElementById('uniqueUsersToday');
+            if (uniqueUsersElement) {
+                uniqueUsersElement.textContent = uniqueUsers.size;
+            }
+
+            // Load total credits transacted today
             const creditsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_STORE_CREDITS_HISTORY'));
             const credits = creditsSnapshot.val() || {};
-            let totalCreditsIssued = 0;
+            let totalCreditsTransacted = 0;
             
             Object.values(credits).forEach(userCredits => {
                 Object.values(userCredits).forEach(transaction => {
-                    if (transaction.timestamp && transaction.timestamp.startsWith(today) && 
-                        transaction.transactionType === 'RECEIVED') {
-                        totalCreditsIssued += parseFloat(transaction.creditsReceived || 0);
+                    if (transaction.timestamp && transaction.timestamp.startsWith(today)) {
+                        // Count both received and spent credits
+                        if (transaction.transactionType === 'RECEIVED') {
+                            totalCreditsTransacted += parseFloat(transaction.creditsReceived || 0);
+                        } else if (transaction.transactionType === 'SPENT') {
+                            totalCreditsTransacted += parseFloat(transaction.creditsSpent || 0);
+                        }
                     }
                 });
             });
 
-            const totalCreditsElement = document.querySelector('.stat-item:nth-child(2) .stat-value');
-            if (totalCreditsElement) {
-                totalCreditsElement.textContent = `$${totalCreditsIssued.toFixed(2)}`;
-            }
-
-            // Load active products count
-            const productsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_PRODUCTS'));
-            const products = productsSnapshot.val() || {};
-            const activeProducts = Object.values(products).filter(product => 
-                product.stock > 0
-            ).length;
-
-            const activeProductsElement = document.querySelector('.stat-item:nth-child(3) .stat-value');
-            if (activeProductsElement) {
-                activeProductsElement.textContent = activeProducts;
-            }
-
-            // Load upcoming events count
-            const eventsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_EVENTS'));
-            const events = eventsSnapshot.val() || {};
-            const todayDate = new Date();
-            const upcomingEvents = Object.values(events).filter(event => 
-                event.eventDate && new Date(event.eventDate) >= todayDate
-            ).length;
-
-            const upcomingEventsElement = document.querySelector('.stat-item:nth-child(4) .stat-value');
-            if (upcomingEventsElement) {
-                upcomingEventsElement.textContent = upcomingEvents;
+            const creditsElement = document.getElementById('creditsTransacted');
+            if (creditsElement) {
+                creditsElement.textContent = `$${totalCreditsTransacted.toFixed(2)}`;
             }
 
         } catch (error) {
@@ -422,6 +439,46 @@ class DashboardManager {
                 pageInfoEl.textContent = `Page 1 of 1 (${checkIns.length} rows)`;
             }
         }
+    }
+
+    async loadTodayEvents() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const eventsSnapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_EVENTS'));
+            const events = eventsSnapshot.val() || {};
+            
+            // Filter events for today
+            const todayEvents = Object.values(events).filter(event => 
+                event.eventDate && event.eventDate.startsWith(today) && event.status === 'active'
+            );
+
+            this.renderTodayEvents(todayEvents);
+        } catch (error) {
+            console.error('Error loading today\'s events:', error);
+        }
+    }
+
+    renderTodayEvents(events) {
+        const eventsSection = document.getElementById('todayEvents');
+        if (!eventsSection) return;
+
+        if (events.length === 0) {
+            eventsSection.innerHTML = `
+                <div class="event-item">
+                    <div class="event-title">No events today</div>
+                    <div class="event-subtitle">Check back later for updates</div>
+                </div>
+            `;
+            return;
+        }
+
+        eventsSection.innerHTML = events.map(event => `
+            <div class="event-item">
+                <div class="event-title">${event.eventName || 'Untitled Event'}</div>
+                <div class="event-subtitle">${event.eventType || 'Event'}</div>
+                <div class="event-time">${event.startTime || 'Time TBD'}</div>
+            </div>
+        `).join('');
     }
 
     showNotification(message, type) {
