@@ -52,6 +52,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    max-height: calc(100vh - 30px);
 }
 
 /* Left Sidebar */
@@ -151,12 +152,14 @@ body {
 /* Right Dashboard */
 .dashboard {
     flex: 1;
-    background-color: #f8f9fa;
-    padding: 25px 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px 15px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
     min-height: 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 30px);
 }
 
 .dashboard-title {

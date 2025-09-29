@@ -22,51 +22,147 @@
                     <h1 class="page-title">Orders</h1>
                 </div>
 
-                <!-- Filters Row: Search under title and divider -->
-                <div class="orders-filters">
-                    <div class="products-search">
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                        <input id="ordersSearch" type="text" placeholder="Search by customer or order ID" aria-label="Search orders">
+                <!-- Toolbar: Tabs on left, Search on right -->
+                <div class="orders-toolbar">
+                    <div class="orders-toolbar-left">
+                        <div class="orders-tabs">
+                            <button class="tab-btn active" data-target="#tab-processing"><i class="fas fa-clock"></i> Processing</button>
+                            <button class="tab-btn" data-target="#tab-completed"><i class="fas fa-check-circle"></i> Completed</button>
+                            <button class="tab-btn" data-target="#tab-cancelled"><i class="fas fa-times-circle"></i> Cancelled</button>
+                        </div>
+                    </div>
+                    <div class="orders-toolbar-right">
+                        <div class="products-search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <input id="ordersSearch" type="text" placeholder="Search by customer or order ID" aria-label="Search orders">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Middle Section: Orders Table (Scrollable) -->
                 <div class="orders-middle-section">
-                    <div class="transactions-table-container">
-                        <div class="table-scroll">
-                            <table class="transactions-table">
-                                <thead>
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Customer</th>
-                                        <th>No. of Items</th>
-                                        <th>Total</th>
-                                        <th>Time</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ordersTableBody">
-                                    <!-- Orders will be loaded dynamically -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="table-pagination" aria-label="Orders table pagination controls">
-                            <div class="pagination-left">
-                                <label for="pageSizeSelect">Rows per page:</label>
-                                <select id="pageSizeSelect">
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
-                                </select>
+                    <!-- Processing Tab -->
+                    <div class="tab-pane active" id="tab-processing">
+                        <div class="transactions-table-container">
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>No. of Items</th>
+                                            <th>Total</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="processingOrdersTableBody">
+                                        <!-- Processing orders will be loaded dynamically -->
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="pagination-right">
-                                <button id="firstPageBtn" type="button">« First</button>
-                                <button id="prevPageBtn" type="button">‹ Prev</button>
-                                <span id="pageInfo" aria-live="polite"></span>
-                                <button id="nextPageBtn" type="button">Next ›</button>
-                                <button id="lastPageBtn" type="button">Last »</button>
+                            <div class="table-pagination" aria-label="Processing orders pagination controls">
+                                <div class="pagination-left">
+                                    <label for="pageSizeSelect">Rows per page:</label>
+                                    <select id="pageSizeSelect">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="15">15</option>
+                                        <option value="20">20</option>
+                                    </select>
+                                </div>
+                                <div class="pagination-right">
+                                    <button id="firstPageBtn" type="button">« First</button>
+                                    <button id="prevPageBtn" type="button">‹ Prev</button>
+                                    <span id="pageInfo" aria-live="polite"></span>
+                                    <button id="nextPageBtn" type="button">Next ›</button>
+                                    <button id="lastPageBtn" type="button">Last »</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Completed Tab -->
+                    <div class="tab-pane" id="tab-completed">
+                        <div class="transactions-table-container">
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>No. of Items</th>
+                                            <th>Total</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completedOrdersTableBody">
+                                        <!-- Completed orders will be loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="table-pagination" aria-label="Completed orders pagination controls">
+                                <div class="pagination-left">
+                                    <label for="pageSizeSelectCompleted">Rows per page:</label>
+                                    <select id="pageSizeSelectCompleted">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="15">15</option>
+                                        <option value="20">20</option>
+                                    </select>
+                                </div>
+                                <div class="pagination-right">
+                                    <button id="firstPageBtnCompleted" type="button">« First</button>
+                                    <button id="prevPageBtnCompleted" type="button">‹ Prev</button>
+                                    <span id="pageInfoCompleted" aria-live="polite"></span>
+                                    <button id="nextPageBtnCompleted" type="button">Next ›</button>
+                                    <button id="lastPageBtnCompleted" type="button">Last »</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cancelled Tab -->
+                    <div class="tab-pane" id="tab-cancelled">
+                        <div class="transactions-table-container">
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>No. of Items</th>
+                                            <th>Total</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cancelledOrdersTableBody">
+                                        <!-- Cancelled orders will be loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="table-pagination" aria-label="Cancelled orders pagination controls">
+                                <div class="pagination-left">
+                                    <label for="pageSizeSelectCancelled">Rows per page:</label>
+                                    <select id="pageSizeSelectCancelled">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="15">15</option>
+                                        <option value="20">20</option>
+                                    </select>
+                                </div>
+                                <div class="pagination-right">
+                                    <button id="firstPageBtnCancelled" type="button">« First</button>
+                                    <button id="prevPageBtnCancelled" type="button">‹ Prev</button>
+                                    <span id="pageInfoCancelled" aria-live="polite"></span>
+                                    <button id="nextPageBtnCancelled" type="button">Next ›</button>
+                                    <button id="lastPageBtnCancelled" type="button">Last »</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -80,6 +176,7 @@
                 <h2 class="dashboard-title">Orders Summary</h2>
                 <p class="date"></p>
                 
+                <!-- Today's Stats -->
                 <div class="stats-section">
                     <div class="stat-item">
                         <div class="stat-label">ORDERS TODAY</div>
@@ -88,7 +185,91 @@
                     
                     <div class="stat-item">
                         <div class="stat-label">REVENUE TODAY</div>
-                        <div class="stat-value" id="revenueToday">$0</div>
+                        <div class="stat-value" id="revenueToday">₱0</div>
+                    </div>
+                </div>
+
+                <!-- Weekly Stats -->
+                <div class="stats-section">
+                    <h3 class="section-title">This Week</h3>
+                    <div class="stat-item">
+                        <div class="stat-label">ORDERS</div>
+                        <div class="stat-value" id="ordersThisWeek">0</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-label">REVENUE</div>
+                        <div class="stat-value" id="revenueThisWeek">₱0</div>
+                    </div>
+                </div>
+
+                <!-- Order Status Breakdown -->
+                <div class="stats-section">
+                    <h3 class="section-title">Order Status</h3>
+                    <div class="status-breakdown">
+                        <div class="status-item">
+                            <span class="status-dot status-pending"></span>
+                            <span class="status-label">Pending</span>
+                            <span class="status-count" id="statusPending">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot status-payment-submitted"></span>
+                            <span class="status-label">Payment Submitted</span>
+                            <span class="status-count" id="statusPaymentSubmitted">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot status-payment-verified"></span>
+                            <span class="status-label">Payment Verified</span>
+                            <span class="status-count" id="statusPaymentVerified">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot status-proof-declined"></span>
+                            <span class="status-label">Proof Declined</span>
+                            <span class="status-count" id="statusProofDeclined">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot status-to-ship"></span>
+                            <span class="status-label">To Ship</span>
+                            <span class="status-count" id="statusToShip">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot status-ready-to-pickup"></span>
+                            <span class="status-label">Ready to Pickup</span>
+                            <span class="status-count" id="statusReadyToPickup">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-dot status-completed"></span>
+                            <span class="status-label">Completed</span>
+                            <span class="status-count" id="statusCompleted">0</span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Top Customers -->
+                <div class="stats-section">
+                    <h3 class="section-title">Top Customers</h3>
+                    <div class="top-customers" id="topCustomers">
+                        <div class="no-data">No customer data</div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="stats-section">
+                    <h3 class="section-title">Performance</h3>
+                    <div class="performance-metrics">
+                        <div class="metric-item">
+                            <div class="metric-label">Avg Order Value</div>
+                            <div class="metric-value" id="avgOrderValue">₱0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Total Orders</div>
+                            <div class="metric-value" id="totalOrders">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Completion Rate</div>
+                            <div class="metric-value" id="completionRate">0%</div>
+                        </div>
                     </div>
                 </div>
             </div>

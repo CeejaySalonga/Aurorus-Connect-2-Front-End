@@ -96,6 +96,7 @@ class CreditManager {
             this.creditHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             this.renderCreditTable();
+            this.updateDashboard();
         } catch (error) {
             console.error('Error loading credit data:', error);
             this.showNotification('Error loading credit data', 'error');
@@ -106,6 +107,8 @@ class CreditManager {
         try {
             const snapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS'));
             this.userCredits = snapshot.val() || {};
+            // Update dashboard when user credits are loaded
+            this.updateDashboard();
         } catch (error) {
             console.error('Error loading user credits:', error);
         }
@@ -122,7 +125,7 @@ class CreditManager {
 
         if (this.creditHistory.length === 0) {
             console.log('No credit history, showing empty message');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No credit transactions</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No credit transactions</td></tr>';
             return;
         }
 
@@ -148,6 +151,7 @@ class CreditManager {
                         <td class="amount ${transaction.transactionType === 'RECEIVED' ? 'positive' : 'negative'}">
                             ${transaction.transactionType === 'RECEIVED' ? '+' : '-'}$${transaction.creditsReceived || transaction.creditsDeducted || '0'}
                         </td>
+                        <td>${new Date(transaction.timestamp).toLocaleDateString()}</td>
                         <td>${new Date(transaction.timestamp).toLocaleTimeString()}</td>
                         <td>$${userCredits}</td>
                     </tr>
@@ -760,6 +764,135 @@ class CreditManager {
         } catch (error) {
             console.error('Error archiving product:', error);
             throw error;
+        }
+    }
+
+    // Dashboard update functions
+    async updateDashboard() {
+        try {
+            console.log('Updating dashboard...');
+            await this.updateTotalCredits();
+            await this.updateTransactionsToday();
+            await this.updateCreditsIssuedToday();
+            await this.updateRecentActivity();
+            this.updateDate();
+        } catch (error) {
+            console.error('Error updating dashboard:', error);
+        }
+    }
+
+    async updateTotalCredits() {
+        try {
+            const snapshot = await window.firebaseDatabase.get(window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS'));
+            const userCredits = snapshot.val() || {};
+            
+            let totalCredits = 0;
+            Object.values(userCredits).forEach(user => {
+                if (user.totalCredits) {
+                    totalCredits += parseFloat(user.totalCredits);
+                }
+            });
+            
+            const totalCreditsElement = document.getElementById('totalCredits');
+            if (totalCreditsElement) {
+                totalCreditsElement.textContent = `$${totalCredits.toFixed(2)}`;
+            }
+        } catch (error) {
+            console.error('Error updating total credits:', error);
+        }
+    }
+
+    async updateTransactionsToday() {
+        try {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            let todayCount = 0;
+            
+            this.creditHistory.forEach(transaction => {
+                const transactionDate = new Date(transaction.timestamp).toISOString().split('T')[0];
+                if (transactionDate === today) {
+                    todayCount++;
+                }
+            });
+            
+            const transactionsTodayElement = document.getElementById('transactionsToday');
+            if (transactionsTodayElement) {
+                transactionsTodayElement.textContent = todayCount.toString();
+            }
+        } catch (error) {
+            console.error('Error updating transactions today:', error);
+        }
+    }
+
+    async updateCreditsIssuedToday() {
+        try {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            let creditsIssuedToday = 0;
+            
+            this.creditHistory.forEach(transaction => {
+                const transactionDate = new Date(transaction.timestamp).toISOString().split('T')[0];
+                if (transactionDate === today && transaction.transactionType === 'RECEIVED' && transaction.creditsReceived) {
+                    creditsIssuedToday += parseFloat(transaction.creditsReceived);
+                }
+            });
+            
+            const creditsIssuedElement = document.getElementById('creditsIssuedToday');
+            if (creditsIssuedElement) {
+                creditsIssuedElement.textContent = `$${creditsIssuedToday.toFixed(2)}`;
+            }
+        } catch (error) {
+            console.error('Error updating credits issued today:', error);
+        }
+    }
+
+    async updateRecentActivity() {
+        try {
+            const recentActivityElement = document.getElementById('recentActivity');
+            if (!recentActivityElement) return;
+            
+            // Get the 5 most recent transactions
+            const recentTransactions = this.creditHistory.slice(0, 5);
+            
+            if (recentTransactions.length === 0) {
+                recentActivityElement.innerHTML = '<div class="no-activity">No recent activity</div>';
+                return;
+            }
+            
+            const activityHTML = recentTransactions.map(transaction => {
+                const time = new Date(transaction.timestamp).toLocaleTimeString();
+                const amount = transaction.creditsReceived || transaction.creditsDeducted || '0';
+                const type = transaction.transactionType;
+                const isPositive = type === 'RECEIVED';
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-time">${time}</div>
+                        <div class="activity-details">
+                            <div class="activity-user">${transaction.userName || transaction.userId}</div>
+                            <div class="activity-amount ${isPositive ? 'positive' : 'negative'}">
+                                ${isPositive ? '+' : '-'}$${amount}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            recentActivityElement.innerHTML = activityHTML;
+        } catch (error) {
+            console.error('Error updating recent activity:', error);
+        }
+    }
+
+    updateDate() {
+        const dateElement = document.querySelector('.date');
+        if (dateElement) {
+            const today = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            dateElement.textContent = today.toLocaleDateString('en-US', options);
         }
     }
 }
