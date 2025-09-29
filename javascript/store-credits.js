@@ -484,8 +484,37 @@ class CreditManager {
         }
     }
 
+    async ensureUserExists(username) {
+        try {
+            const userRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS/' + username);
+            const snapshot = await window.firebaseDatabase.get(userRef);
+            const existing = snapshot.val();
+            
+            if (!existing) {
+                // Create new user entry
+                const userData = {
+                    username: username,
+                    totalCredits: 0,
+                    lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                    userId: username
+                };
+                
+                await window.firebaseDatabase.set(userRef, userData);
+                console.log(`Created new user entry for: ${username}`);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error ensuring user exists:', error);
+            return false;
+        }
+    }
+
     async addCreditsToUser(username, amount, reason = '') {
         try {
+            // Ensure user exists in TBL_USER_TOTAL_CREDITS
+            await this.ensureUserExists(username);
+            
             // Get current user credits to calculate new total
             const currentCredits = await this.getUserCreditsByUsername(username);
             const newTotal = currentCredits + amount;
@@ -539,6 +568,9 @@ class CreditManager {
 
     async updateUserCreditsByUsername(username, amount) {
         try {
+            // Ensure user exists in TBL_USER_TOTAL_CREDITS
+            await this.ensureUserExists(username);
+            
             const userCreditsRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS/' + username);
             const snapshot = await window.firebaseDatabase.get(userCreditsRef);
             const currentData = snapshot.val();
@@ -546,6 +578,7 @@ class CreditManager {
             const newTotal = Math.max(0, currentCredits + amount);
 
             await window.firebaseDatabase.set(userCreditsRef, {
+                username: username,
                 userId: username,
                 totalCredits: newTotal,
                 lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19)
@@ -633,6 +666,9 @@ class CreditManager {
             if (productPrice <= 0) {
                 return { success: false, message: 'Invalid product price' };
             }
+            
+            // Ensure user exists in TBL_USER_TOTAL_CREDITS
+            await this.ensureUserExists(username);
             
             // Check user credits using username
             const userCredits = await this.getUserCreditsByUsername(username);

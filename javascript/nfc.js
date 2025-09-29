@@ -241,12 +241,23 @@ class NFCManager {
                 return;
             }
 
-            // Save check-in to Firebase with nested structure: userId/checkinId -> { timestamp }
+            // Generate check-in ID and timestamp
+            const checkInId = this.generateCheckInId();
             const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-            const checkinRef = window.firebaseDatabase.push(userRef);
-            await window.firebaseDatabase.set(checkinRef, { timestamp });
             
-            this.log('Check-in saved successfully');
+            // Create check-in entry with format: username/check-inID/timestamp
+            const checkInData = {
+                username: userData.userName,
+                checkInId: checkInId,
+                timestamp: timestamp,
+                email: userData.email || ''
+            };
+            
+            // Save check-in to Firebase with nested structure: userId/checkinId -> { username, checkInId, timestamp, email }
+            const checkinRef = window.firebaseDatabase.push(userRef);
+            await window.firebaseDatabase.set(checkinRef, checkInData);
+            
+            this.log(`Check-in saved successfully: ${userData.userName}/${checkInId}/${timestamp}`);
             this.showSuccessModal('Check-in', userData.userName, 'Check-in successful');
             
             // Refresh dashboard data
@@ -268,6 +279,9 @@ class NFCManager {
             }
 
             const amount = parseFloat(this.pendingAmount);
+            
+            // Ensure user exists in TBL_USER_TOTAL_CREDITS
+            await this.ensureUserExists(userData.userName);
             
             // Get current user credits to calculate new total
             const currentCredits = await this.getUserCreditsByUsername(userData.userName);
@@ -353,6 +367,9 @@ class NFCManager {
 
     async updateUserCreditsByUsername(username, amount) {
         try {
+            // Ensure user exists in TBL_USER_TOTAL_CREDITS
+            await this.ensureUserExists(username);
+            
             const userCreditsRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS/' + username);
             const snapshot = await window.firebaseDatabase.get(userCreditsRef);
             const currentData = snapshot.val();
@@ -360,6 +377,7 @@ class NFCManager {
             const newTotal = Math.max(0, currentCredits + amount);
 
             await window.firebaseDatabase.set(userCreditsRef, {
+                username: username,
                 userId: username,
                 totalCredits: newTotal,
                 lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19)
@@ -652,11 +670,15 @@ class NFCManager {
             this.log(`🛍️ Product: ${productName}`, 'info');
             userId = (userName || 'UNKNOWN').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
         } else {
-            // Check-in: File 1 = userId, File 2 = userName
-            userId = file1Data;
-            userName = file2Data;
-            this.log(`🆔 User ID: ${userId}`, 'info');
+            // Check-in: File 1 = username, File 2 = email (based on Android HCE service)
+            userName = file1Data;
+            userEmail = file2Data;
             this.log(`👤 Username: ${userName}`, 'info');
+            this.log(`📧 Email: ${userEmail}`, 'info');
+            
+            // Use username as the key for TBL_USER_CHECKIN
+            userId = userName;
+            this.log(`🆔 Using username as User ID: ${userId}`, 'info');
         }
 
         const userData = { 
@@ -686,6 +708,66 @@ class NFCManager {
             this.log('🔌 Disconnected from card', 'info');
         } catch (_) {}
         this.log('🎉 Desktop NFC flow complete!', 'success');
+    }
+
+    async lookupUserByEmail(email) {
+        try {
+            this.log(`🔍 Looking up user by email: ${email}`, 'info');
+            
+            // Get all users from Firebase
+            const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+            const snapshot = await window.firebaseDatabase.get(usersRef);
+            const users = snapshot.val() || {};
+            
+            // Find user by email
+            for (const [uid, userData] of Object.entries(users)) {
+                if (userData.email === email || userData.userEmail === email) {
+                    this.log(`✅ Found user: ${userData.name || userData.userName || 'Unknown'} (UID: ${uid})`, 'success');
+                    return {
+                        uid: uid,
+                        name: userData.name || userData.userName || 'Unknown User',
+                        email: userData.email || userData.userEmail || email
+                    };
+                }
+            }
+            
+            this.log(`❌ User not found for email: ${email}`, 'warning');
+            return null;
+        } catch (error) {
+            this.log(`❌ Error looking up user: ${error.message}`, 'error');
+            return null;
+        }
+    }
+
+    generateCheckInId() {
+        // Generate a unique check-in ID (8 characters)
+        return Math.random().toString(36).substring(2, 10).toUpperCase();
+    }
+
+    async ensureUserExists(username) {
+        try {
+            const userRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS/' + username);
+            const snapshot = await window.firebaseDatabase.get(userRef);
+            const existing = snapshot.val();
+            
+            if (!existing) {
+                // Create new user entry
+                const userData = {
+                    username: username,
+                    totalCredits: 0,
+                    lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                    userId: username
+                };
+                
+                await window.firebaseDatabase.set(userRef, userData);
+                this.log(`Created new user entry for: ${username}`, 'info');
+            }
+            
+            return true;
+        } catch (error) {
+            this.log(`Error ensuring user exists: ${error.message}`, 'error');
+            return false;
+        }
     }
 }
 

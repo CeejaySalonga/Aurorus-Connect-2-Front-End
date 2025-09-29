@@ -182,10 +182,21 @@ class App {
                 return;
             }
 
-            // Save check-in as child node with timestamp
+            // Generate check-in ID and timestamp
+            const checkInId = this.generateCheckInId();
             const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            
+            // Create check-in entry with format: username/check-inID/timestamp
+            const checkInData = {
+                username: userName,
+                checkInId: checkInId,
+                timestamp: timestamp,
+                email: ''
+            };
+            
+            // Save check-in as child node with new format
             const checkinRef = window.firebaseDatabase.push(userRef);
-            await window.firebaseDatabase.set(checkinRef, { timestamp });
+            await window.firebaseDatabase.set(checkinRef, checkInData);
             
             this.showNotification(`Check-in successful for ${userName}`, 'success');
             
@@ -198,6 +209,11 @@ class App {
             console.error('Error processing manual check-in:', error);
             this.showNotification('Error processing check-in', 'error');
         }
+    }
+
+    generateCheckInId() {
+        // Generate a unique check-in ID (8 characters)
+        return Math.random().toString(36).substring(2, 10).toUpperCase();
     }
 
     toggleTerminal() {
@@ -340,41 +356,49 @@ class DashboardManager {
             
             const today = new Date().toISOString().split('T')[0];
             const todayCheckIns = [];
-            Object.entries(checkIns).forEach(([userId, value]) => {
+            
+            // Process check-ins with new format: username/check-inID/timestamp
+            Object.entries(checkIns).forEach(([username, value]) => {
                 if (typeof value === 'string') {
+                    // Legacy format: just timestamp
                     if (value.startsWith(today)) {
                         todayCheckIns.push({
-                            userId,
-                            userName: userId,
+                            userId: username,
+                            userName: username,
                             time: new Date(value.replace(' ', 'T')).toLocaleTimeString(),
                             status: 'Present'
                         });
                     }
                 } else if (value && typeof value.timestamp === 'string') {
+                    // Legacy format: object with timestamp
                     if (value.timestamp.startsWith(today)) {
                         todayCheckIns.push({
-                            userId,
-                            userName: value.userName || userId,
+                            userId: username,
+                            userName: value.username || username,
                             time: new Date(value.timestamp).toLocaleTimeString(),
                             status: value.status || 'Present'
                         });
                     }
                 } else if (value && typeof value === 'object') {
+                    // New format: nested check-ins with username/check-inID/timestamp
                     Object.values(value).forEach(v => {
                         if (typeof v === 'string') {
+                            // Legacy nested string format
                             if (v.startsWith(today)) {
                                 todayCheckIns.push({
-                                    userId,
-                                    userName: userId,
+                                    userId: username,
+                                    userName: username,
                                     time: new Date(v.replace(' ', 'T')).toLocaleTimeString(),
                                     status: 'Present'
                                 });
                             }
                         } else if (v && typeof v.timestamp === 'string') {
+                            // New format: { username, checkInId, timestamp, email }
                             if (v.timestamp.startsWith(today)) {
                                 todayCheckIns.push({
-                                    userId,
-                                    userName: v.userName || userId,
+                                    userId: username,
+                                    userName: v.username || username,
+                                    checkInId: v.checkInId || '',
                                     time: new Date(v.timestamp).toLocaleTimeString(),
                                     status: v.status || 'Present'
                                 });
