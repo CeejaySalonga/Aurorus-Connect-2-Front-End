@@ -76,6 +76,7 @@ class NFCManager {
     }
 
     async startMonitoring(mode = 'checkin', amount = '') {
+        // Fast path: if already initialized, skip re-init to reduce latency on mobile data
         if (!this.reader && !this.ws) {
             const initialized = await this.initialize();
             if (!initialized) return false;
@@ -117,6 +118,7 @@ class NFCManager {
         }
 
         try {
+            // Pre-start reader quickly to reduce first-read latency
             await this.reader.scan();
             this.reader.onreading = (event) => this.handleCardRead(event);
             this.reader.onreadingerror = (error) => this.handleReadError(error);
@@ -214,6 +216,13 @@ class NFCManager {
     async processCheckIn(userData) {
         try {
             this.log(`Processing check-in for user: ${userData.userName} (ID: ${userData.userId})`);
+            // Block check-in if username is unknown or empty
+            const name = (userData.userName || '').trim().toLowerCase();
+            if (!name || name === 'unknown' || name === 'unknown user' || name === 'n/a') {
+                this.showError('Cannot proceed: NFC returned an unknown username.');
+                this.log('Blocked check-in due to unknown username', 'error');
+                return;
+            }
             
             // Check if user already checked in today
             const today = new Date().toISOString().split('T')[0];
@@ -272,6 +281,13 @@ class NFCManager {
     async processCreditReceive(userData) {
         try {
             this.log(`Processing credit receive for user: ${userData.userName}, amount: $${this.pendingAmount}`);
+            // Block credit receive if username is unknown or empty
+            const name = (userData.userName || '').trim().toLowerCase();
+            if (!name || name === 'unknown' || name === 'unknown user' || name === 'n/a') {
+                this.showError('Cannot proceed: NFC returned an unknown username.');
+                this.log('Blocked credit receive due to unknown username', 'error');
+                return;
+            }
             
             if (!this.pendingAmount || isNaN(parseFloat(this.pendingAmount))) {
                 this.showError('Invalid credit amount');
@@ -325,7 +341,7 @@ class NFCManager {
                 
                 this.log(`Processing payment for product: ${productName}`);
                 
-                const result = await window.creditManager.processProductPayment(userData.userId, productName);
+                const result = await window.creditManager.processProductPayment(userData.userName, productName);
                 
                 if (result.success) {
                     this.log('Payment processed successfully');
@@ -692,8 +708,15 @@ class NFCManager {
         this.log(`🆔 Generated User ID: ${userId}`, 'info');
 
         if (this.currentMode === 'checkin') {
+            // Block check-in if username is unknown or empty
+            const name = (userData.userName || '').trim().toLowerCase();
+            if (!name || name === 'unknown' || name === 'unknown user' || name === 'n/a') {
+                this.showError('Cannot proceed: NFC returned an unknown username.');
+                this.log('Blocked check-in at desktop flow due to unknown username', 'error');
+            } else {
             this.log('✅ Processing check-in...', 'info');
             await this.processCheckIn(userData);
+            }
         } else if (this.currentMode === 'receive') {
             this.log(`💰 Processing credit receive ($${this.pendingAmount})...`, 'info');
             await this.processCreditReceive(userData);

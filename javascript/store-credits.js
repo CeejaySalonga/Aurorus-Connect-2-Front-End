@@ -34,6 +34,8 @@ class CreditManager {
     const processCreditsBtn = document.querySelector('.process-credits-btn');
     if (processCreditsBtn) {
             processCreditsBtn.addEventListener('click', () => {
+                // Open terminal for live logs before starting flow
+                this.showTerminal();
                 this.showAddCreditsForm();
             });
     }
@@ -42,6 +44,8 @@ class CreditManager {
         const payWithCreditsBtn = document.querySelector('.pay-with-credits-btn');
     if (payWithCreditsBtn) {
             payWithCreditsBtn.addEventListener('click', () => {
+                // Open terminal for live logs before starting payment
+                this.showTerminal();
                 this.showPaymentForm();
             });
     }
@@ -653,16 +657,33 @@ class CreditManager {
             let product = null;
             let productId = null;
             
-            // Find product by name
-            for (const [id, prod] of Object.entries(products)) {
-                if (prod.name && prod.name.toLowerCase().includes(productName.toLowerCase())) {
-                    product = prod;
-                    productId = id;
-                    break;
+            // Find product by robust matching: exact name, alt fields, fallback contains/startsWith
+            const needle = (productName || '').trim().toLowerCase();
+            const candidates = Object.entries(products);
+            // 1) Exact match on common fields
+            for (const [id, prod] of candidates) {
+                const fields = [prod.name, prod.productName, prod.title, prod.sku, prod.code]
+                    .filter(Boolean)
+                    .map(v => String(v).trim().toLowerCase());
+                if (fields.includes(needle)) { product = prod; productId = id; break; }
+            }
+            // 2) startsWith on name/title if not found
+            if (!product) {
+                for (const [id, prod] of candidates) {
+                    const nameField = String(prod.name || prod.title || '').trim().toLowerCase();
+                    if (needle && nameField.startsWith(needle)) { product = prod; productId = id; break; }
+                }
+            }
+            // 3) contains on name/title if still not found
+            if (!product) {
+                for (const [id, prod] of candidates) {
+                    const nameField = String(prod.name || prod.title || '').trim().toLowerCase();
+                    if (needle && nameField.includes(needle)) { product = prod; productId = id; break; }
                 }
             }
             
             if (!product) {
+                console.warn('Product not found. Needle:', needle, 'Available product names:', Object.values(products).map(p => p && (p.name || p.title || p.productName)).filter(Boolean));
                 return { success: false, message: 'Product not found' };
             }
             
