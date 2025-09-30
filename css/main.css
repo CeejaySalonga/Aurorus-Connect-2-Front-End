@@ -517,6 +517,64 @@ body {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
+/* Larger success modal with profile */
+.modal.success-modal .modal-content.large {
+    max-width: 640px;
+}
+
+.modal.success-modal .success-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.modal.success-modal .avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.modal.success-modal .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.modal.success-modal .user-meta .user-name {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.modal.success-modal .user-meta .user-email {
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.modal.success-modal .success-body .status {
+    margin: 8px 0 0 0;
+    font-size: 16px;
+}
+
+.modal.success-modal .success-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Verify identity modal */
+.modal.verify-modal .modal-content.large { max-width: 720px; }
+.modal.verify-modal .verify-header { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
+.modal.verify-modal .avatar.xl { width: 160px; height: 160px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+.modal.verify-modal .avatar.xl img { width: 100%; height: 100%; object-fit: cover; }
+.modal.verify-modal .user-meta .user-name { font-size: 24px; font-weight: 800; }
+.modal.verify-modal .user-meta .user-email { color: #4a5568; font-size: 15px; }
+.modal.verify-modal .verify-body .hint { color: #4a5568; margin-top: 4px; }
+.modal.verify-modal .verify-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; }
+
 .modal-content h3 {
     margin: 0 0 16px 0;
     color: #2d3748;

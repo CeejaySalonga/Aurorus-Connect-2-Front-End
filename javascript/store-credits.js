@@ -153,11 +153,11 @@ class CreditManager {
                             </span>
                         </td>
                         <td class="amount ${transaction.transactionType === 'RECEIVED' ? 'positive' : 'negative'}">
-                            ${transaction.transactionType === 'RECEIVED' ? '+' : '-'}$${transaction.creditsReceived || transaction.creditsDeducted || '0'}
+                            ${transaction.transactionType === 'RECEIVED' ? '+' : '-'}₱${transaction.creditsReceived || transaction.creditsDeducted || '0'}
                         </td>
                         <td>${new Date(transaction.timestamp).toLocaleDateString()}</td>
                         <td>${new Date(transaction.timestamp).toLocaleTimeString()}</td>
-                        <td>$${userCredits}</td>
+                        <td>₱${userCredits}</td>
                     </tr>
                 `;
             })
@@ -281,7 +281,7 @@ class CreditManager {
                 <!-- Amount Input Section -->
                 <div class="form-section">
                     <div class="form-group">
-                        <input type="text" id="amount-input" class="numpad-input" value="$0.00" readonly>
+                        <input type="text" id="amount-input" class="numpad-input" value="₱0.00" readonly>
                     </div>
                 </div>
                 
@@ -413,7 +413,7 @@ class CreditManager {
 
     addDigit(digit, amountInput) {
         if (amountInput) {
-            let currentValue = amountInput.value.replace('$', '').replace('.00', '');
+            let currentValue = amountInput.value.replace('₱', '').replace('.00', '');
             
             // If current value is 0, replace it with the new digit
             if (currentValue === '0') {
@@ -423,7 +423,7 @@ class CreditManager {
             // Limit to 6 digits
             if (currentValue.length < 6) {
                 const newValue = currentValue + digit;
-                amountInput.value = '$' + newValue + '.00';
+                amountInput.value = '₱' + newValue + '.00';
             }
         }
     }
@@ -431,23 +431,23 @@ class CreditManager {
     handleNumpadAction(action, amountInput) {
         if (action === 'clear') {
             if (amountInput) {
-                amountInput.value = '$0.00';
+                amountInput.value = '₱0.00';
             }
         } else if (action === 'backspace') {
             if (amountInput) {
-                const currentValue = amountInput.value.replace('$', '').replace('.00', '');
+                const currentValue = amountInput.value.replace('₱', '').replace('.00', '');
                 if (currentValue.length > 1) {
                     const newValue = currentValue.slice(0, -1);
-                    amountInput.value = '$' + newValue + '.00';
+                    amountInput.value = '₱' + newValue + '.00';
                 } else {
-                    amountInput.value = '$0.00';
+                    amountInput.value = '₱0.00';
                 }
             }
         }
     }
 
     handleConfirmAmount(amountInput, overlay) {
-        const amount = amountInput ? amountInput.value.replace('$', '').replace('.00', '') : '';
+        const amount = amountInput ? amountInput.value.replace('₱', '').replace('.00', '') : '';
         
         if (amount && !isNaN(amount) && parseInt(amount) > 0) {
             console.log('Confirmed amount:', amount);
@@ -542,7 +542,7 @@ class CreditManager {
             // Update user total credits using username as key
             await this.updateUserCreditsByUsername(username, amount);
             
-            this.showNotification(`$${amount} credits added to user ${username}`, 'success');
+            this.showNotification(`₱${amount} credits added to user ${username}`, 'success');
             
             // Refresh data
             this.loadCreditData();
@@ -561,8 +561,8 @@ class CreditManager {
             const currentCredits = currentData ? currentData.totalCredits : 0;
             const newTotal = Math.max(0, currentCredits + amount);
 
-            await window.firebaseDatabase.set(userCreditsRef, {
-                userId: userId,
+            // Partial update: preserve existing keys such as profilePicture
+            await window.firebaseDatabase.update(userCreditsRef, {
                 totalCredits: newTotal,
                 lastUpdated: new Date().toISOString()
             });
@@ -585,9 +585,8 @@ class CreditManager {
             const currentCredits = currentData ? currentData.totalCredits : 0;
             const newTotal = Math.max(0, currentCredits + amount);
 
-            await window.firebaseDatabase.set(userCreditsRef, {
-                username: username,
-                userId: username,
+            // Partial update: preserve existing keys such as profilePicture
+            await window.firebaseDatabase.update(userCreditsRef, {
                 totalCredits: newTotal,
                 lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19)
             });
@@ -618,7 +617,7 @@ class CreditManager {
         this.isReceiveMode = true;
         this.isPayMode = false;
         
-        console.log(`Starting NFC receive mode for amount: $${amount}`);
+        console.log(`Starting NFC receive mode for amount: ₱${amount}`);
         
         // Start NFC manager in receive mode
         if (window.nfcManager) {
@@ -700,7 +699,7 @@ class CreditManager {
             if (userCredits < productPrice) {
                 return { 
                     success: false, 
-                    message: `Insufficient credits. Required: $${productPrice}, Available: $${userCredits}` 
+                    message: `Insufficient credits. Required: ₱${productPrice}, Available: ₱${userCredits}` 
                 };
             }
             
@@ -739,7 +738,7 @@ class CreditManager {
                 }
             }
             
-            this.showNotification(`Payment successful! Deducted: $${productPrice}, New balance: $${newBalance}`, 'success');
+            this.showNotification(`Payment successful! Deducted: ₱${productPrice}, New balance: ₱${newBalance}`, 'success');
             this.loadCreditData(); // Refresh data
             
             return { 
@@ -816,7 +815,7 @@ class CreditManager {
             
             const totalCreditsElement = document.getElementById('totalCredits');
             if (totalCreditsElement) {
-                totalCreditsElement.textContent = `$${totalCredits.toFixed(2)}`;
+                totalCreditsElement.textContent = `₱${totalCredits.toFixed(2)}`;
             }
         } catch (error) {
             console.error('Error updating total credits:', error);
@@ -858,7 +857,7 @@ class CreditManager {
             
             const creditsIssuedElement = document.getElementById('creditsIssuedToday');
             if (creditsIssuedElement) {
-                creditsIssuedElement.textContent = `$${creditsIssuedToday.toFixed(2)}`;
+                creditsIssuedElement.textContent = `₱${creditsIssuedToday.toFixed(2)}`;
             }
         } catch (error) {
             console.error('Error updating credits issued today:', error);
@@ -890,7 +889,7 @@ class CreditManager {
                         <div class="activity-details">
                             <div class="activity-user">${transaction.userName || transaction.userId}</div>
                             <div class="activity-amount ${isPositive ? 'positive' : 'negative'}">
-                                ${isPositive ? '+' : '-'}$${amount}
+                                ${isPositive ? '+' : '-'}₱${amount}
                             </div>
                         </div>
                     </div>

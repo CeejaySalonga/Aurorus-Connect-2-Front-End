@@ -371,16 +371,16 @@
 
 /* Payment Submitted Status */
 .status-badge.status-payment-submitted {
-    background-color: #d1fae5;
-    color: #065f46;
-    border-color: #a7f3d0;
+    background-color: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
 }
 
 /* Payment Verified Status */
 .status-badge.status-payment-verified {
-    background-color: #dcfce7;
-    color: #166534;
-    border-color: #bbf7d0;
+    background-color: #e0f2fe;
+    color: #075985;
+    border-color: #bae6fd;
 }
 
 /* Proof Declined Status */
@@ -392,23 +392,30 @@
 
 /* Pending Payment Status */
 .status-badge.status-pending-payment {
-    background-color: #fef3c7;
-    color: #92400e;
-    border-color: #fde68a;
+    background-color: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
 }
 
 /* To Ship Status */
 .status-badge.status-to-ship {
-    background-color: #dbeafe;
-    color: #1e40af;
-    border-color: #93c5fd;
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border-color: #ddd6fe;
+}
+
+/* Ready to Ship Status (current system) */
+.status-badge.status-ready-to-ship {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border-color: #ddd6fe;
 }
 
 /* Ready to Pickup Status */
 .status-badge.status-ready-to-pickup {
-    background-color: #e0e7ff;
-    color: #3730a3;
-    border-color: #c7d2fe;
+    background-color: #ccfbf1;
+    color: #115e59;
+    border-color: #99f6e4;
 }
 
 /* Completed Status */
@@ -520,6 +527,10 @@
 }
 
 .status-dot.status-to-ship {
+    background-color: #93c5fd;
+}
+
+.status-dot.status-ready-to-ship {
     background-color: #93c5fd;
 }
 

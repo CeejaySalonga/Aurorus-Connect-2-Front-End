@@ -223,6 +223,12 @@ class NFCManager {
                 this.log('Blocked check-in due to unknown username', 'error');
                 return;
             }
+            // Face-to-face verification modal
+            const verified = await this.showIdentityConfirmModal(userData);
+            if (!verified) {
+                this.log('Check-in cancelled by staff (identity not confirmed)', 'warning');
+                return;
+            }
             
             // Check if user already checked in today
             const today = new Date().toISOString().split('T')[0];
@@ -261,13 +267,27 @@ class NFCManager {
                 timestamp: timestamp,
                 email: userData.email || ''
             };
+
+            // Ensure parent node holds the profile picture (not inside the check-in record)
+            try {
+                const prof = await this.lookupUserProfileByEmailOrName(userData.email || '', userData.userName || '');
+                if (prof && prof.profilePicture) {
+                    const parentSnap = await window.firebaseDatabase.get(userRef);
+                    const parentVal = parentSnap.val() || {};
+                    const hasParentPic = !!(parentVal['Profile Picture'] || parentVal.profilePicture || parentVal.photoBase64);
+                    if (!hasParentPic) {
+                        const picRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + userKey + '/Profile Picture');
+                        await window.firebaseDatabase.set(picRef, prof.profilePicture);
+                    }
+                }
+            } catch (_) {}
             
             // Save check-in to Firebase with nested structure: userId/checkinId -> { username, checkInId, timestamp, email }
             const checkinRef = window.firebaseDatabase.push(userRef);
             await window.firebaseDatabase.set(checkinRef, checkInData);
             
             this.log(`Check-in saved successfully: ${userData.userName}/${checkInId}/${timestamp}`);
-            this.showSuccessModal('Check-in', userData.userName, 'Check-in successful');
+            this.showSuccessModal('Check-in', userData.userName, 'Check-in successful', userData.userId, userData.email || '');
             
             // Refresh dashboard data
             this.refreshCheckInData();
@@ -276,6 +296,84 @@ class NFCManager {
             this.log(`Error saving check-in: ${error.message}`);
             this.showError('Error saving check-in. Please try again.');
         }
+    }
+
+    showIdentityConfirmModal(userData) {
+        return new Promise((resolve) => {
+            const { userId, userName, email } = userData;
+            const modal = document.createElement('div');
+            modal.className = 'modal verify-modal';
+            modal.innerHTML = `
+                <div class="modal-content large">
+                    <div class="verify-header">
+                        <div class="avatar xl">
+                            <img id="verifyProfileImg" src="${this.getProfileImageUrl(userName, email)}" alt="${userName}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0D8ABC&color=fff&size=256'" />
+                        </div>
+                        <div class="user-meta">
+                            <h3>Verify Identity</h3>
+                            <div class="user-name">${userName}</div>
+                            ${email ? `<div class=\"user-email\">${email}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="verify-body">
+                        <p class="hint">Confirm the person in front of you matches the profile.</p>
+                    </div>
+                    <div class="verify-actions">
+                        <button id="cancelVerify" class="btn-secondary">Cancel</button>
+                        <button id="confirmVerify" class="btn-primary">Confirm identity</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Hydrate real photo for display, prioritizing Credits table for credits flows
+            const hydrate = async () => {
+                const img = modal.querySelector('#verifyProfileImg');
+                if (!img) return;
+                // 1) For credits flows, try TBL_USER_TOTAL_CREDITS/<username>/profilePicture first
+                if (this.currentMode === 'receive' || this.currentMode === 'pay') {
+                    try {
+                        const base64 = await this.fetchCreditsProfilePicture(userName || '');
+                        if (base64) { img.src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`; return; }
+                    } catch (_) {}
+                }
+                if (!userId) return;
+                try {
+                    const userRef = window.firebaseDatabase.ref(window.database, 'users/' + userId);
+                    const snapshot = await window.firebaseDatabase.get(userRef);
+                    const data = snapshot.val();
+                    const photoUrl = data && (data.photoURL || data.photoUrl || data.profilePic || data.avatar);
+                    if (photoUrl) { img.src = photoUrl; return; }
+                } catch (_) {}
+                try {
+                    const checkinRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + userId);
+                    const snap = await window.firebaseDatabase.get(checkinRef);
+                    const val = snap.val();
+                    if (!val) return;
+                    let base64 = (val['Profile Picture'] || val.profilePicture || val.photoBase64 || '');
+                    if (!base64 && typeof val === 'object') {
+                        for (const child of Object.values(val)) {
+                            if (!child) continue;
+                            if (typeof child === 'object') {
+                                base64 = child['Profile Picture'] || child.profilePicture || child.photoBase64 || '';
+                            } else if (typeof child === 'string' && (child.startsWith('data:image') || child.startsWith('/9j/'))) {
+                                base64 = child;
+                            }
+                            if (base64) break;
+                        }
+                    }
+                    if (base64) img.src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`;
+                } catch (_) {}
+            };
+            hydrate();
+
+            const onCancel = () => { if (modal.parentNode) modal.remove(); resolve(false); };
+            const onConfirm = () => { if (modal.parentNode) modal.remove(); resolve(true); };
+            const cancelBtn = modal.querySelector('#cancelVerify');
+            const confirmBtn = modal.querySelector('#confirmVerify');
+            if (cancelBtn) cancelBtn.addEventListener('click', onCancel);
+            if (confirmBtn) confirmBtn.addEventListener('click', onConfirm);
+        });
     }
 
     async processCreditReceive(userData) {
@@ -295,9 +393,16 @@ class NFCManager {
             }
 
             const amount = parseFloat(this.pendingAmount);
+
+            // Face-to-face verification modal
+            const verified = await this.showIdentityConfirmModal(userData);
+            if (!verified) {
+                this.log('Credit receive cancelled by staff (identity not confirmed)', 'warning');
+                return;
+            }
             
-            // Ensure user exists in TBL_USER_TOTAL_CREDITS
-            await this.ensureUserExists(userData.userName);
+            // Ensure user exists in TBL_USER_TOTAL_CREDITS (attach base64 profile if available)
+            await this.ensureUserExists(userData.userName, userData.email || '');
             
             // Get current user credits to calculate new total
             const currentCredits = await this.getUserCreditsByUsername(userData.userName);
@@ -319,7 +424,7 @@ class NFCManager {
             await this.updateUserCreditsByUsername(userData.userName, amount);
             
             this.log('Credits added successfully');
-            this.showSuccessModal('Credits Received', userData.userName, `$${amount} credits added`);
+            this.showSuccessModal('Credits Received', userData.userName, `₱${amount} credits added`, userData.userId, userData.email || '');
             
             // Refresh dashboard data
             this.refreshCreditData();
@@ -333,6 +438,14 @@ class NFCManager {
     async processPayment(userData) {
         try {
             this.log(`Processing payment for user: ${userData.userName}`);
+            // Face-to-face verification modal
+            const verified = await this.showIdentityConfirmModal(userData);
+            if (!verified) {
+                this.log('Payment cancelled by staff (identity not confirmed)', 'warning');
+                return;
+            }
+            // Ensure user exists in credits DB as well
+            await this.ensureUserExists(userData.userName, userData.email || '');
             
             // Use the CreditManager to process the payment
             if (window.creditManager) {
@@ -345,8 +458,9 @@ class NFCManager {
                 
                 if (result.success) {
                     this.log('Payment processed successfully');
-                    this.showSuccessModal('Payment Successful', userData.userName, 
-                        `$${result.deducted} deducted for ${result.productName}. New balance: $${result.newBalance}`);
+                this.showSuccessModal('Payment Successful', userData.userName, 
+                        `₱${result.deducted} deducted for ${result.productName}. New balance: ₱${result.newBalance}`,
+                        userData.userId, userData.email || '');
                 } else {
                     this.showError(result.message || 'Payment failed');
                 }
@@ -368,8 +482,8 @@ class NFCManager {
             const currentCredits = currentData ? currentData.totalCredits : 0;
             const newTotal = Math.max(0, currentCredits + amount); // Ensure credits don't go negative
 
-            await window.firebaseDatabase.set(userCreditsRef, {
-                userId: userId,
+            // Partial update: do not overwrite other keys
+            await window.firebaseDatabase.update(userCreditsRef, {
                 totalCredits: newTotal,
                 lastUpdated: new Date().toISOString()
             });
@@ -392,9 +506,8 @@ class NFCManager {
             const currentCredits = currentData ? currentData.totalCredits : 0;
             const newTotal = Math.max(0, currentCredits + amount);
 
-            await window.firebaseDatabase.set(userCreditsRef, {
-                username: username,
-                userId: username,
+            // Partial update: do not overwrite other keys
+            await window.firebaseDatabase.update(userCreditsRef, {
                 totalCredits: newTotal,
                 lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19)
             });
@@ -458,25 +571,96 @@ class NFCManager {
         }
     }
 
-    showSuccessModal(type, userName, message) {
+    showSuccessModal(type, userName, message, userId = '', email = '') {
         const modal = document.createElement('div');
         modal.className = 'modal success-modal';
         modal.innerHTML = `
-            <div class="modal-content">
-                <h3>✅ ${type} Success</h3>
-                <p><strong>User:</strong> ${userName}</p>
-                <p><strong>Status:</strong> ${message}</p>
-                <button class="btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+            <div class="modal-content large">
+                <div class="success-header">
+                    <div class="avatar">
+                        <img id="successProfileImg" src="${this.getProfileImageUrl(userName, email)}" alt="${userName}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0D8ABC&color=fff&size=128'" />
+                    </div>
+                    <div class="user-meta">
+                        <h3>✅ ${type} Success</h3>
+                        <div class="user-name">${userName}</div>
+                        ${email ? `<div class="user-email">${email}</div>` : ''}
+                    </div>
+                </div>
+                <div class="success-body">
+                    <p class="status">${message}</p>
+                </div>
+                <div class="success-actions">
+                    <button class="btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+                </div>
             </div>
         `;
         document.body.appendChild(modal);
-        
-        // Auto-remove after 3 seconds
-        setTimeout(() => {
-            if (modal.parentNode) {
-                modal.remove();
+
+        (async () => {
+            const img = modal.querySelector('#successProfileImg');
+            if (!img) return;
+            // 1) For credits flows, try Credits table first by username
+            if (this.currentMode === 'receive' || this.currentMode === 'pay') {
+                try {
+                    const base64 = await this.fetchCreditsProfilePicture(userName || '');
+                    if (base64) { img.src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`; return; }
+                } catch (_) {}
             }
-        }, 3000);
+            // 2) Users table by UID
+            if (userId) {
+                try {
+                    const userRef = window.firebaseDatabase.ref(window.database, 'users/' + userId);
+                    const snapshot = await window.firebaseDatabase.get(userRef);
+                    const data = snapshot.val();
+                    const photoUrl = data && (data.photoURL || data.photoUrl || data.profilePic || data.avatar);
+                    if (photoUrl) { img.src = photoUrl; return; }
+                } catch (_) {}
+            }
+            // 3) Fallback: check-in stored base64
+            try {
+                const checkinRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_CHECKIN/' + (userId || userName));
+                const snap = await window.firebaseDatabase.get(checkinRef);
+                const val = snap.val();
+                if (!val) return;
+                let base64 = (val['Profile Picture'] || val.profilePicture || val.photoBase64 || '');
+                if (!base64 && typeof val === 'object') {
+                    for (const child of Object.values(val)) {
+                        if (!child) continue;
+                        if (typeof child === 'object') {
+                            base64 = child['Profile Picture'] || child.profilePicture || child.photoBase64 || '';
+                        } else if (typeof child === 'string' && (child.startsWith('data:image') || child.startsWith('/9j/'))) {
+                            base64 = child;
+                        }
+                        if (base64) break;
+                    }
+                }
+                if (base64) {
+                    const src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`;
+                    img.src = src;
+                }
+            } catch (_) {}
+        })();
+    }
+
+    getProfileImageUrl(userName, email) {
+        // Placeholder: if you later store profile URLs in DB, fetch here
+        // For now, use ui-avatars to generate a consistent avatar
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0D8ABC&color=fff&size=128`;
+    }
+
+    async fetchCreditsProfilePicture(username) {
+        try {
+            const key = (username || '').trim();
+            if (!key) return null;
+            const creditsRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS/' + key);
+            const cSnap = await window.firebaseDatabase.get(creditsRef);
+            const cVal = cSnap.val();
+            if (!cVal) return null;
+            const base64 = cVal.profilePicture || cVal['Profile Picture'] || '';
+            return base64 || null;
+        } catch (e) {
+            return null;
+        }
     }
 
     showError(message) {
@@ -767,7 +951,7 @@ class NFCManager {
         return Math.random().toString(36).substring(2, 10).toUpperCase();
     }
 
-    async ensureUserExists(username) {
+    async ensureUserExists(username, userEmail = '') {
         try {
             const userRef = window.firebaseDatabase.ref(window.database, 'TBL_USER_TOTAL_CREDITS/' + username);
             const snapshot = await window.firebaseDatabase.get(userRef);
@@ -781,6 +965,13 @@ class NFCManager {
                     lastUpdated: new Date().toISOString().replace('T', ' ').substring(0, 19),
                     userId: username
                 };
+                // Try to attach base64 profile from users by email/name
+                try {
+                    const prof = await this.lookupUserProfileByEmailOrName(userEmail || '', username || '');
+                    if (prof && prof.profilePicture) {
+                        userData.profilePicture = prof.profilePicture;
+                    }
+                } catch (_) {}
                 
                 await window.firebaseDatabase.set(userRef, userData);
                 this.log(`Created new user entry for: ${username}`, 'info');
@@ -790,6 +981,33 @@ class NFCManager {
         } catch (error) {
             this.log(`Error ensuring user exists: ${error.message}`, 'error');
             return false;
+        }
+    }
+
+    async lookupUserProfileByEmailOrName(email, name) {
+        try {
+            const usersRef = window.firebaseDatabase.ref(window.database, 'users');
+            const snap = await window.firebaseDatabase.get(usersRef);
+            if (!snap.exists()) return null;
+            const all = snap.val() || {};
+            const lowerEmail = (email || '').trim().toLowerCase();
+            const lowerName = (name || '').trim().toLowerCase();
+            let found = null;
+            for (const [uid, data] of Object.entries(all)) {
+                const d = data || {};
+                const dEmail = (d.email || d.userEmail || '').toLowerCase();
+                const dName = (d.name || d.displayName || d.userName || '').toLowerCase();
+                const base64 = d.profilePicture || d.photoBase64 || '';
+                const isEmailMatch = lowerEmail && dEmail === lowerEmail;
+                const isNameMatch = !lowerEmail && lowerName && dName === lowerName;
+                if (isEmailMatch || isNameMatch) {
+                    found = { userId: uid, profilePicture: base64 };
+                    if (isEmailMatch) break; // prefer exact email match
+                }
+            }
+            return found;
+        } catch (e) {
+            return null;
         }
     }
 }

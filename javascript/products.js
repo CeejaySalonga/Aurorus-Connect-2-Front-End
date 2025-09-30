@@ -433,7 +433,9 @@ class ProductManager {
                 </div>
             </div>
             <div class="form-section">
-                <div class="form-group"><label>Description</label><div style="white-space:pre-wrap">${product.description || ''}</div></div>
+                <div class="form-group"><label>Description</label>
+                    <textarea readonly style="width:100%; min-height:140px; max-height:260px; resize:vertical; overflow:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; color:#333;">${product.description || ''}</textarea>
+                </div>
             </div>
             <div class="button-group">
                 <button class="back-btn" type="button"><i class="fas fa-times"></i> Close</button>

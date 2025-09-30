@@ -4,7 +4,60 @@ class OrdersManager {
     constructor() {
         this.orders = [];
         this.isLoading = false;
+        this.smtp = {
+            endpoint: typeof window !== 'undefined' ? window.SMTP_ENDPOINT : undefined,
+            emailjs: typeof window !== 'undefined' ? window.emailjs : undefined,
+            emailjsConfig: typeof window !== 'undefined' ? window.EMAILJS_CONFIG : undefined
+        };
+        try {
+            const mode = this.smtp.endpoint
+                ? `SMTP endpoint: ${this.smtp.endpoint}`
+                : (this.smtp.emailjs && this.smtp.emailjsConfig?.serviceId && this.smtp.emailjsConfig?.templateId
+                    ? `EmailJS: serviceId=${this.smtp.emailjsConfig.serviceId}, templateId=${this.smtp.emailjsConfig.templateId}`
+                    : 'Email sending not configured');
+            console.info('[Orders] Email configuration:', mode);
+        } catch (e) {
+            // noop
+        }
         this.init();
+    }
+
+    showToast(message, type = 'info') {
+        try {
+            const existing = document.querySelector('.toast-container');
+            const container = existing || (() => {
+                const c = document.createElement('div');
+                c.className = 'toast-container';
+                c.style.position = 'fixed';
+                c.style.zIndex = '9999';
+                c.style.right = '16px';
+                c.style.bottom = '16px';
+                c.style.display = 'flex';
+                c.style.flexDirection = 'column';
+                c.style.gap = '8px';
+                document.body.appendChild(c);
+                return c;
+            })();
+
+            const toast = document.createElement('div');
+            toast.className = `toast-item toast-${type}`;
+            toast.textContent = message;
+            toast.style.padding = '10px 12px';
+            toast.style.borderRadius = '8px';
+            toast.style.color = '#0b1a0f';
+            toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+            toast.style.border = '1px solid #e5e7eb';
+            toast.style.background = type === 'success' ? '#ecfdf5' : (type === 'error' ? '#fef2f2' : '#f3f4f6');
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity .3s ease';
+                setTimeout(() => container.removeChild(toast), 350);
+            }, 3500);
+        } catch (_) {
+            // Fallback
+            alert(message);
+        }
     }
 
 	// Utility: normalize proof-of-payment input into a usable <img> src
@@ -31,7 +84,7 @@ class OrdersManager {
 		}
 		// Fallback to PNG
 		return `data:image/png;base64,${input}`;
-	}
+    }
 
     init() {
         this.setupEventListeners();
@@ -103,23 +156,26 @@ class OrdersManager {
 
             const isPlainObject = (val) => val && typeof val === 'object' && !Array.isArray(val);
 
-            Object.entries(root).forEach(([maybeUserKey, value]) => {
+			Object.entries(root).forEach(([maybeUserKey, value]) => {
                 // If direct orders flat list, treat keys as orderIds
-                if (isPlainObject(value) && (value.orderId || value.items || value.userName)) {
+				if (isPlainObject(value) && (value.orderId || value.items || value.userName)) {
                     const order = value;
                     const items = toArray(order.items);
                     const totals = order.totals || {};
                     const total = Number(order.total ?? totals.grandTotal ?? totals.total ?? 0);
                     aggregated.push({
                         orderId: order.orderId || maybeUserKey,
-                        customer: order.userName || order.userId || 'Unknown',
-                        items,
+                    customer: order.userName || order.userId || 'Unknown',
+                    items,
                         totals,
                         total,
-                        status: order.status || order.payment?.status,
-                        paymentMethod: order.payment?.method,
-                        payment: order.payment || {},
-                        timestamp: normalizeTimestamp(order.timestamp || order.createdAt || order.updatedAt)
+						status: order.status || order.payment?.status,
+						paymentMethod: order.payment?.method,
+						payment: order.payment || {},
+						userEmail: order.userEmail,
+						userId: order.userId,
+						shipping: order.shipping || {},
+						timestamp: normalizeTimestamp(order.timestamp || order.createdAt || order.updatedAt)
                     });
                     return;
                 }
@@ -140,7 +196,7 @@ class OrdersManager {
                         totals,
                         status: order.status || order.payment?.status,
                         paymentMethod: order.payment?.method,
-                        total,
+                    total,
                         userEmail: order.userEmail,
                         userId: order.userId,
                         shipping: order.shipping || {},
@@ -203,7 +259,7 @@ class OrdersManager {
                 
                 // Today's stats
                 if (orderDateStr === today) {
-                    ordersToday += 1;
+                ordersToday += 1;
                     revenueToday += orderTotal;
                 }
                 
@@ -390,6 +446,7 @@ class OrdersManager {
 
     async updateOrderStatus(orderId, newStatus) {
         try {
+            const previous = this.orders.find(o => o.orderId === orderId)?.status || '';
             // Try to find path under TBL_ORDERS/{userKey}/{orderId}
             const rootRef = window.firebaseDatabase.ref(window.database, 'TBL_ORDERS');
             const rootSnap = await window.firebaseDatabase.get(rootRef);
@@ -425,11 +482,142 @@ class OrdersManager {
             // Re-render tables to reflect status change
             this.renderOrdersTable();
 
+            // If transitioned to PAYMENT_VERIFIED, send notification
+            if (String(previous).toUpperCase() !== 'PAYMENT_VERIFIED' && String(newStatus).toUpperCase() === 'PAYMENT_VERIFIED') {
+                this.sendPaymentVerifiedEmail(orderId)
+                    .then(() => this.showToast('Payment verified email sent', 'success'))
+                    .catch(err => {
+                        console.warn('Failed to send payment verified email:', err);
+                        this.showToast('Failed to send payment verified email', 'error');
+                    });
+            }
+
+            // If transitioned to READY_TO_SHIP, send notification
+            if (String(previous).toUpperCase() !== 'READY_TO_SHIP' && String(newStatus).toUpperCase() === 'READY_TO_SHIP') {
+                this.sendReadyToShipEmail(orderId)
+                    .then(() => this.showToast('Ready to ship email sent', 'success'))
+                    .catch(err => {
+                        console.warn('Failed to send ready to ship email:', err);
+                        this.showToast('Failed to send ready to ship email', 'error');
+                    });
+            }
+
             return true;
         } catch (error) {
             console.error('Error updating order status:', error);
             throw error;
         }
+    }
+
+    getOrderById(orderId) {
+        return this.orders.find(o => o.orderId === orderId);
+    }
+
+    async sendPaymentVerifiedEmail(orderId) {
+        const order = this.getOrderById(orderId);
+        if (!order) throw new Error('Order not loaded');
+
+        const recipient = order.userEmail || order.customerEmail || order.shipping?.email || '';
+        if (!recipient) {
+            const msg = 'No recipient email on order. Add userEmail or shipping.email to the order.';
+            console.warn('[Orders] sendPaymentVerifiedEmail:', msg, { orderId });
+            alert('Cannot send email: missing customer email on the order.');
+            throw new Error(msg);
+        }
+
+        const itemCount = (order.items || []).length;
+        const total = Number(order.total || 0).toFixed(2);
+        const shippingType = (order.shipping?.type || order.shipping?.shippingType || 'Standard');
+
+        const payload = {
+            to: recipient,
+            subject: `Payment Verified for Order #${order.orderId}`,
+            message: `Hi ${order.customer || ''},\n\nYour order #${order.orderId} has been verified.\n\nDetails:\n- Items: ${itemCount}\n- Total: ₱${total}\n- Shipping: ${shippingType}\n- Date: ${new Date(order.timestamp).toLocaleString()}\n\nThank you for shopping with us!`,
+            meta: {
+                orderId: order.orderId,
+                customer: order.customer,
+                items: itemCount,
+                total: total,
+                shippingType
+            }
+        };
+
+        // Prefer server endpoint if configured
+        if (this.smtp.endpoint) {
+            console.info('[Orders] Sending email via SMTP endpoint...', { to: payload.to, orderId: order.orderId });
+            const res = await fetch(this.smtp.endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error(`SMTP endpoint error: ${res.status}`);
+            console.info('[Orders] SMTP email sent.');
+            return true;
+        }
+
+        // Fallback to EmailJS if configured
+        if (this.smtp.emailjs && this.smtp.emailjsConfig?.serviceId && this.smtp.emailjsConfig?.templateId) {
+            const templateParams = {
+                to_email: recipient,
+                to_name: order.customer || 'Customer',
+                order_id: order.orderId,
+                items_count: String(itemCount),
+                total_amount: `₱${total}`,
+                shipping_type: shippingType,
+                placed_at: new Date(order.timestamp).toLocaleString()
+            };
+            const { serviceId, templateId } = this.smtp.emailjsConfig;
+            console.info('[Orders] Sending email via EmailJS...', { to: templateParams.to_email, orderId: order.orderId, serviceId, templateId });
+            await this.smtp.emailjs.send(serviceId, templateId, templateParams);
+            console.info('[Orders] EmailJS email sent.');
+            return true;
+        }
+
+        const msg = 'No SMTP endpoint or EmailJS configured. Set window.SMTP_ENDPOINT or window.EMAILJS_CONFIG.';
+        console.warn('[Orders] sendPaymentVerifiedEmail:', msg);
+        alert('Email not configured. Please set SMTP endpoint or EmailJS config.');
+        throw new Error(msg);
+    }
+
+    async sendReadyToShipEmail(orderId) {
+        const order = this.getOrderById(orderId);
+        if (!order) throw new Error('Order not loaded');
+
+        const recipient = order.userEmail || order.customerEmail || order.shipping?.email || '';
+        if (!recipient) {
+            const msg = 'No recipient email on order. Add userEmail or shipping.email to the order.';
+            console.warn('[Orders] sendReadyToShipEmail:', msg, { orderId });
+            this.showToast('Cannot send email: missing customer email on the order.', 'error');
+            throw new Error(msg);
+        }
+
+        const itemCount = (order.items || []).length;
+        const total = Number(order.total || 0).toFixed(2);
+        const shippingType = (order.shipping?.type || order.shipping?.shippingType || 'Standard');
+
+        // EmailJS only (this status is informational; no server endpoint fallback)
+        if (this.smtp.emailjs && window.EMAILJS_CONFIG?.serviceId && window.EMAILJS_CONFIG?.readyToShipTemplateId) {
+            const templateParams = {
+                to_email: recipient,
+                to_name: order.customer || 'Customer',
+                order_id: order.orderId,
+                items_count: String(itemCount),
+                total_amount: `₱${total}`,
+                shipping_type: shippingType,
+                placed_at: new Date(order.timestamp).toLocaleString()
+            };
+            const serviceId = window.EMAILJS_CONFIG.serviceId;
+            const templateId = window.EMAILJS_CONFIG.readyToShipTemplateId;
+            console.info('[Orders] Sending READY_TO_SHIP email via EmailJS...', { to: templateParams.to_email, orderId: order.orderId, serviceId, templateId });
+            await this.smtp.emailjs.send(serviceId, templateId, templateParams);
+            console.info('[Orders] READY_TO_SHIP EmailJS email sent.');
+            return true;
+        }
+
+        const msg = 'READY_TO_SHIP EmailJS not configured. Set window.EMAILJS_CONFIG.readyToShipTemplateId';
+        console.warn('[Orders] sendReadyToShipEmail:', msg);
+        this.showToast('Email not configured for Ready To Ship. Please set template ID.', 'error');
+        throw new Error(msg);
     }
 
     openProofInNewWindow(proofSrc, orderId) {
@@ -677,6 +865,7 @@ class OrdersManager {
                     saveBtn.addEventListener('click', async () => {
                         try {
                             const newStatus = statusSelect ? statusSelect.value : 'PAYMENT_SUBMITTED';
+                            const prevStatus = String(order.status || '').toUpperCase();
 
                             // Try to find path under TBL_ORDERS/{userKey}/{orderId}
                             const rootRef = window.firebaseDatabase.ref(window.database, 'TBL_ORDERS');
@@ -709,6 +898,26 @@ class OrdersManager {
 
                             // Rerender tables to reflect status change
                             this.renderOrdersTable();
+
+                            // Send email if transitioned to PAYMENT_VERIFIED
+                            if (prevStatus !== 'PAYMENT_VERIFIED' && String(newStatus).toUpperCase() === 'PAYMENT_VERIFIED') {
+                                this.sendPaymentVerifiedEmail(order.orderId)
+                                    .then(() => this.showToast('Payment verified email sent', 'success'))
+                                    .catch(err => {
+                                        console.warn('Failed to send payment verified email:', err);
+                                        this.showToast('Failed to send payment verified email', 'error');
+                                    });
+                            }
+
+                            // Send email if transitioned to READY_TO_SHIP
+                            if (prevStatus !== 'READY_TO_SHIP' && String(newStatus).toUpperCase() === 'READY_TO_SHIP') {
+                                this.sendReadyToShipEmail(order.orderId)
+                                    .then(() => this.showToast('Ready to ship email sent', 'success'))
+                                    .catch(err => {
+                                        console.warn('Failed to send ready to ship email:', err);
+                                        this.showToast('Failed to send ready to ship email', 'error');
+                                    });
+                            }
 
                             // Close the popup after successful update
                             document.body.removeChild(overlay);

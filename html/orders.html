@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aurorus Connect - Orders</title>
-    <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="../css/orders.css">
-    <link rel="stylesheet" href="../css/create-popup.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/orders.css">
+    <link rel="stylesheet" href="/css/create-popup.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -322,11 +322,27 @@
     </script>
     
     <!-- App Scripts -->
-    <script src="../javascript/auth.js"></script>
-    <script src="../javascript/sidebar.js"></script>
-    <script src="../javascript/archive.js"></script>
-    <script src="../javascript/pagination.js"></script>
-    <script src="../javascript/orders.js"></script>
+    <!-- Optional EmailJS for client-side SMTP -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+    <script>
+        // Configure EmailJS (fill with your keys)
+        window.EMAILJS_CONFIG = window.EMAILJS_CONFIG || {
+            publicKey: 'hhPeD_qQwiKZzKJhB', // e.g. 'YOUR_PUBLIC_KEY'
+            serviceId: 'service_n2cws7a', // e.g. 'service_xxx'
+            templateId: 'template_85v3w1y', // PAYMENT_VERIFIED template id
+            readyToShipTemplateId: 'template_bb504ac' // READY_TO_SHIP template id (fill from EmailJS)
+        };
+        // Ensure SMTP endpoint is not used when relying on EmailJS
+        window.SMTP_ENDPOINT = undefined;
+        if (window.emailjs && window.EMAILJS_CONFIG?.publicKey) {
+            window.emailjs.init(window.EMAILJS_CONFIG.publicKey);
+        }
+    </script>
+    <script src="/javascript/auth.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+    <script src="/javascript/archive.js"></script>
+    <script src="/javascript/pagination.js"></script>
+    <script src="/javascript/orders.js"></script>
 </body>
 </html>
 
